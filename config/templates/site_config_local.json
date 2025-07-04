@@ -1,0 +1,38 @@
+{
+  "db_host": "localhost",
+  "db_port": 3306,
+  "db_name": "erpnext_local",
+  "db_user": "erpnext_local",
+  "db_password": "erpnext_local",
+  "db_type": "mariadb",
+  "redis_cache": "redis://localhost:6379/0",
+  "redis_queue": "redis://localhost:6379/1",
+  "redis_socketio": "redis://localhost:6379/2",
+  "socketio_port": 9000,
+  "webserver_port": 8000,
+  "file_watcher_port": 6787,
+  "bench_name": "frappe-bench",
+  "site_name": "erpnext.local",
+  "developer_mode": 1,
+  "server_script_enabled": 1,
+  "disable_website_cache": 1,
+  "background_workers": 1,
+  "auto_update": 0,
+  "scheduler_enabled": 1,
+  "maintenance_mode": 0,
+  "allow_tests": 1,
+  "logging": {
+    "level": "DEBUG",
+    "file": "logs/frappe.log",
+    "max_size": 10000000,
+    "backup_count": 5
+  },
+  "email": {
+    "smtp_server": "localhost",
+    "smtp_port": 587,
+    "use_tls": 1,
+    "login": "",
+    "password": "",
+    "sender": "no-reply@erpnext.local"
+  }
+}

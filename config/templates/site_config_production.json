@@ -1,0 +1,51 @@
+{
+  "db_host": "localhost",
+  "db_port": 3306,
+  "db_name": "erpnext_production",
+  "db_user": "erpnext_production",
+  "db_password": "CHANGE_ME_SECURE_PASSWORD",
+  "db_type": "mariadb",
+  "redis_cache": "redis://localhost:6379/0",
+  "redis_queue": "redis://localhost:6379/1",
+  "redis_socketio": "redis://localhost:6379/2",
+  "socketio_port": 9000,
+  "webserver_port": 8000,
+  "file_watcher_port": 6787,
+  "bench_name": "frappe-bench",
+  "site_name": "example.com",
+  "developer_mode": 0,
+  "server_script_enabled": 0,
+  "disable_website_cache": 0,
+  "background_workers": 4,
+  "auto_update": 0,
+  "scheduler_enabled": 1,
+  "maintenance_mode": 0,
+  "allow_tests": 0,
+  "logging": {
+    "level": "ERROR",
+    "file": "logs/frappe.log",
+    "max_size": 50000000,
+    "backup_count": 10
+  },
+  "email": {
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "use_tls": 1,
+    "login": "your-email@gmail.com",
+    "password": "your-app-password",
+    "sender": "no-reply@example.com"
+  },
+  "backup": {
+    "enabled": 1,
+    "schedule": "0 2 * * *",
+    "retention_days": 30,
+    "backup_path": "/var/backups/frappe-bench"
+  },
+  "security": {
+    "csrf_protection": 1,
+    "force_https": 1,
+    "session_timeout": 3600,
+    "max_login_attempts": 5,
+    "lockout_duration": 300
+  }
+}
