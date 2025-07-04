@@ -343,6 +343,54 @@ nano sites/erpnext.local/site_config.json
 
 **For more detailed troubleshooting, see our [Troubleshooting Guide](docs/troubleshooting.md)**
 
+#### Quick Start Examples
+
+**Development Setup:**
+```bash
+# Clone and setup for development
+git clone https://github.com/OzCog/mlpn.git
+cd mlpn
+make quick-setup
+
+# Or using the installation script
+./scripts/local_install.sh --dev
+
+# Or using the Python helper
+python3 setup.py full-setup --dev
+```
+
+**Production Deployment:**
+```bash
+# After development setup, deploy to production
+make production-setup
+
+# Or using the deployment script
+./scripts/local_deploy.sh --site-name your-domain.com --ssl
+```
+
+**Common Tasks:**
+```bash
+# Start development server
+make start
+
+# Create backup
+make backup
+
+# Update system
+make update
+
+# Check system status
+make status
+
+# View logs
+make logs
+
+# Run tests
+make test
+```
+
+**Complete Installation Guide:** See [docs/installation.md](docs/installation.md) for comprehensive instructions.
+
 ## Learning and community
 
 1. [Frappe School](https://school.frappe.io) - Learn Frappe Framework and ERPNext from the various courses by the maintainers or from the community.
