@@ -44,8 +44,10 @@ def run_command(cmd, cwd=None, check=True):
         )
         return result
     except subprocess.CalledProcessError as e:
-        print_error(f"Command failed: {cmd}")
-        print_error(f"Error: {e.stderr}")
+        sanitized_cmd = cmd.replace(db_password, "[REDACTED]") if 'db_password' in locals() else cmd
+        sanitized_stderr = e.stderr.replace(db_password, "[REDACTED]") if 'db_password' in locals() else e.stderr
+        print_error(f"Command failed: {sanitized_cmd}")
+        print_error(f"Error: {sanitized_stderr}")
         return None
 
 def check_system_requirements():
