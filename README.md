@@ -76,6 +76,7 @@ It takes care of installation, setup, upgrades, monitoring, maintenance and supp
 
 
 ### Self-Hosted
+
 #### Docker
 
 Prerequisites: docker, docker-compose, git. Refer [Docker Documentation](https://docs.docker.com) for more details on Docker setup.
@@ -94,6 +95,121 @@ After a couple of minutes, site should be accessible on your localhost port: 808
 
 See [Frappe Docker](https://github.com/frappe/frappe_docker?tab=readme-ov-file#to-run-on-arm64-architecture-follow-this-instructions) for ARM based docker setup.
 
+#### Local Production Deployment
+
+For local production deployment with proper web server and process management:
+
+**Quick Deployment**
+
+Use our automated deployment script:
+
+```bash
+# After completing the development setup, run:
+./scripts/local_deploy.sh --site-name your-domain.com --ssl
+```
+
+**Manual Production Setup**
+
+1. **Switch to Production Mode**
+   ```bash
+   cd frappe-bench
+   bench --site your-site.local set-config developer_mode 0
+   bench --site your-site.local set-config server_script_enabled 0
+   bench build --production
+   ```
+
+2. **Setup Nginx**
+   ```bash
+   # Install nginx
+   sudo apt-get install -y nginx
+
+   # Generate nginx configuration
+   bench setup nginx
+
+   # Enable site
+   sudo ln -s /home/$(whoami)/frappe-bench/config/nginx.conf /etc/nginx/sites-enabled/frappe-bench
+   sudo systemctl restart nginx
+   ```
+
+3. **Setup Supervisor**
+   ```bash
+   # Install supervisor
+   sudo apt-get install -y supervisor
+
+   # Generate supervisor configuration
+   bench setup supervisor
+
+   # Enable and start supervisor
+   sudo ln -s /home/$(whoami)/frappe-bench/config/supervisor.conf /etc/supervisor/conf.d/frappe-bench.conf
+   sudo systemctl restart supervisor
+   ```
+
+4. **Setup SSL (Optional)**
+   ```bash
+   # Install certbot
+   sudo apt-get install -y certbot python3-certbot-nginx
+
+   # Get SSL certificate
+   sudo certbot --nginx -d your-domain.com
+   ```
+
+5. **Setup Automated Backups**
+   ```bash
+   # Create backup directory
+   sudo mkdir -p /var/backups/frappe-bench
+   sudo chown -R $(whoami):$(whoami) /var/backups/frappe-bench
+
+   # Setup daily backup cron job
+   crontab -e
+   # Add this line:
+   # 0 2 * * * cd /home/$(whoami)/frappe-bench && bench --site your-site.local backup --with-files && mv sites/your-site.local/backups/* /var/backups/frappe-bench/
+   ```
+
+**Production Configuration**
+
+Use our production configuration template:
+
+```bash
+# Copy production configuration
+cp config/templates/site_config_production.json sites/your-site.local/site_config.json
+cp config/templates/.env.production .env
+
+# Edit configuration files
+nano sites/your-site.local/site_config.json
+nano .env
+```
+
+**Security Checklist**
+
+- [ ] Change default admin password
+- [ ] Enable HTTPS/SSL
+- [ ] Configure firewall (ufw/iptables)
+- [ ] Setup fail2ban for intrusion prevention
+- [ ] Regular security updates
+- [ ] Database user with limited privileges
+- [ ] Regular backups with encryption
+- [ ] Monitor log files for suspicious activity
+
+**Monitoring and Maintenance**
+
+```bash
+# Check service status
+sudo supervisorctl status
+
+# View logs
+tail -f frappe-bench/logs/web.log
+tail -f frappe-bench/logs/worker.log
+
+# Update system
+bench update
+
+# Manual backup
+bench --site your-site.local backup --with-files
+
+# Restart services
+sudo supervisorctl restart all
+```
+
 
 ## Development Setup
 ### Manual Install
@@ -102,32 +218,130 @@ The Easy Way: our install script for bench will install all dependencies (e.g. M
 
 New passwords will be created for the ERPNext "Administrator" user, the MariaDB root user, and the frappe user (the script displays the passwords and saves them to ~/frappe_passwords.txt).
 
+### Local Installation & Setup
 
-### Local
+We provide automated scripts to make local installation and deployment easier. Choose the method that best fits your needs:
 
-To setup the repository locally follow the steps mentioned below:
+#### Quick Start (Recommended)
 
-1. Setup bench by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation) and start the server
+Use our automated installation script for a hassle-free setup:
+
+```bash
+# Download and run the installation script
+curl -fsSL https://raw.githubusercontent.com/OzCog/mlpn/develop/scripts/local_install.sh | bash
+
+# Or clone the repository and run locally
+git clone https://github.com/OzCog/mlpn.git
+cd mlpn
+./scripts/local_install.sh --dev
+```
+
+#### Manual Installation
+
+For more control over the installation process:
+
+1. **Install System Dependencies**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install -y python3-dev python3-pip python3-venv redis-server mariadb-server \
+                          mariadb-client libmariadb-dev libffi-dev libssl-dev wkhtmltopdf curl \
+                          git npm nodejs libcups2-dev
+
+   # CentOS/RHEL/Fedora
+   sudo yum install -y python3-devel python3-pip redis mariadb-server mariadb-devel \
+                       libffi-devel openssl-devel wkhtmltopdf curl git npm nodejs cups-devel
+
+   # macOS (with Homebrew)
+   brew install python3 redis mariadb node npm wkhtmltopdf
    ```
+
+2. **Setup Database**
+   ```bash
+   # Start MariaDB
+   sudo systemctl start mariadb
+   sudo systemctl enable mariadb
+
+   # Secure MariaDB installation
+   sudo mysql_secure_installation
+
+   # Create database and user
+   sudo mysql -u root -p -e "CREATE DATABASE erpnext_local;"
+   sudo mysql -u root -p -e "CREATE USER 'erpnext_local'@'localhost' IDENTIFIED BY 'erpnext_local';"
+   sudo mysql -u root -p -e "GRANT ALL PRIVILEGES ON erpnext_local.* TO 'erpnext_local'@'localhost';"
+   sudo mysql -u root -p -e "FLUSH PRIVILEGES;"
+   ```
+
+3. **Install frappe-bench**
+   ```bash
+   pip3 install --user frappe-bench
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+
+4. **Initialize Bench and Install ERPNext**
+   ```bash
+   # Initialize bench
+   bench init frappe-bench
+   cd frappe-bench
+
+   # Create a new site
+   bench new-site erpnext.local --db-name erpnext_local --admin-password admin
+
+   # Get ERPNext app
+   bench get-app https://github.com/OzCog/mlpn
+
+   # Install ERPNext
+   bench --site erpnext.local install-app erpnext
+
+   # Start the server
    bench start
    ```
 
-2. In a separate terminal window, run the following commands:
-   ```
-   # Create a new site
-   bench new-site erpnext.localhost
+5. **Access Your Site**
+   - Open `http://erpnext.local:8000` in your browser
+   - Login with: Administrator / admin
+
+#### Configuration Templates
+
+We provide pre-configured templates for different environments:
+
+```bash
+# Copy configuration templates
+cp config/templates/.env.local .env
+cp config/templates/site_config_local.json sites/erpnext.local/site_config.json
+
+# Edit the configuration files as needed
+nano .env
+nano sites/erpnext.local/site_config.json
+```
+
+#### Troubleshooting
+
+**Common Issues:**
+
+1. **Permission Errors**: Make sure your user has proper permissions
+   ```bash
+   sudo chown -R $(whoami):$(whoami) frappe-bench
    ```
 
-3. Get the ERPNext app and install it
-   ```
-   # Get the ERPNext app
-   bench get-app https://github.com/frappe/erpnext
-
-   # Install the app
-   bench --site erpnext.localhost install-app erpnext
+2. **Database Connection Issues**: Check MariaDB is running and credentials are correct
+   ```bash
+   sudo systemctl status mariadb
+   mysql -u erpnext_local -p -e "SELECT 1;"
    ```
 
-4. Open the URL `http://erpnext.localhost:8000/app` in your browser, you should see the app running
+3. **Port Already in Use**: Change the port or stop the conflicting service
+   ```bash
+   bench config set webserver_port 8001
+   ```
+
+4. **Node.js/npm Issues**: Ensure you have the latest LTS version
+   ```bash
+   node --version  # Should be >= 18.x
+   npm --version   # Should be >= 8.x
+   ```
+
+**For more detailed troubleshooting, see our [Troubleshooting Guide](docs/troubleshooting.md)**
 
 ## Learning and community
 
