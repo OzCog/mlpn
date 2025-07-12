@@ -406,6 +406,35 @@ make test
 1. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
 2. [Translations](https://crowdin.com/project/frappe)
 
+## Distributed Agentic Cognitive Grammar Network
+
+This repository includes infrastructure for developing a **Distributed Agentic Cognitive Grammar Network** - an advanced cognitive architecture combining neural-symbolic computation, attention allocation, and embodied cognition.
+
+### Automated Issue Creation
+
+The repository includes a GitHub Action that automatically creates structured issues for the 6 phases of cognitive network development:
+
+1. **Phase 1**: Cognitive Primitives & Foundational Hypergraph Encoding
+2. **Phase 2**: ECAN Attention Allocation & Resource Kernel Construction
+3. **Phase 3**: Neural-Symbolic Synthesis via Custom ggml Kernels
+4. **Phase 4**: Distributed Cognitive Mesh API & Embodiment Layer
+5. **Phase 5**: Recursive Meta-Cognition & Evolutionary Optimization
+6. **Phase 6**: Rigorous Testing, Documentation, and Cognitive Unification
+
+**To create issues:**
+1. Go to the **Actions** tab
+2. Find "Create Cognitive Network Issues" workflow
+3. Click "Run workflow" and select desired phase(s)
+
+**Documentation:** See [Cognitive Network Issues Guide](.github/docs/cognitive-network-issues.md)
+
+### Implementation Philosophy
+
+- **Recursive Modularity**: Each component is self-similar and modular
+- **Real Implementation**: All work uses real data, no mocks or simulations
+- **Living Documentation**: Auto-generated flowcharts and architectural diagrams
+- **Evolutionary Optimization**: Continuous improvement and adaptation
+- **Cognitive Unity**: All modules converge toward emergent cognitive synthesis
 
 ## Logo and Trademark Policy
 
