@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { execSync } = require('child_process');
+const { Octokit } = require("@octokit/rest");
 
 // Configuration
 const REPO_OWNER = 'OzCog';
@@ -8,6 +9,118 @@ const REPO_NAME = 'mlpn';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const PHASE = process.env.PHASE || 'all';
 const DRY_RUN = process.env.DRY_RUN === 'true';
+
+// Initialize Octokit for label management
+const octokit = new Octokit({ auth: GITHUB_TOKEN });
+
+// Required labels with their configurations
+const requiredLabels = [
+  { name: "phase-1", color: "0e8a16", description: "Phase 1: Cognitive Primitives & Foundational Hypergraph Encoding" },
+  { name: "phase-2", color: "5319e7", description: "Phase 2: ECAN Attention Allocation & Resource Kernel Construction" },
+  { name: "phase-3", color: "ff6b6b", description: "Phase 3: Neural-Symbolic Synthesis via Custom ggml Kernels" },
+  { name: "phase-4", color: "4ecdc4", description: "Phase 4: Distributed Cognitive Mesh API & Embodiment Layer" },
+  { name: "phase-5", color: "45b7d1", description: "Phase 5: Recursive Meta-Cognition & Evolutionary Optimization" },
+  { name: "phase-6", color: "96ceb4", description: "Phase 6: Rigorous Testing, Documentation, and Cognitive Unification" },
+  { name: "milestone", color: "fbca04", description: "Milestone tracking issue" },
+  { name: "cognitive-network", color: "d73a49", description: "Related to cognitive network development" },
+  { name: "scheme", color: "0052cc", description: "Scheme programming language related" },
+  { name: "microservices", color: "7057ff", description: "Microservices architecture" },
+  { name: "grammar", color: "008672", description: "Grammar and language processing" },
+  { name: "tensor", color: "e99695", description: "Tensor operations and processing" },
+  { name: "hypergraph", color: "f9d0c4", description: "Hypergraph data structures" },
+  { name: "architecture", color: "c2e0c6", description: "System architecture" },
+  { name: "verification", color: "bfd4f2", description: "Verification and validation" },
+  { name: "testing", color: "d4edda", description: "Testing and quality assurance" },
+  { name: "visualization", color: "fff3cd", description: "Data visualization and flowcharts" },
+  { name: "ecan", color: "0366d6", description: "ECAN attention allocation system" },
+  { name: "kernel", color: "28a745", description: "Kernel development" },
+  { name: "scheduler", color: "6f42c1", description: "Task scheduling systems" },
+  { name: "atomspace", color: "e36209", description: "AtomSpace integration" },
+  { name: "mesh", color: "f66a0a", description: "Distributed mesh networks" },
+  { name: "distributed", color: "0969da", description: "Distributed systems" },
+  { name: "benchmarking", color: "1f883d", description: "Performance benchmarking" },
+  { name: "flowchart", color: "953800", description: "Flowchart documentation" },
+  { name: "ggml", color: "8250df", description: "ggml neural network framework" },
+  { name: "kernels", color: "bf8700", description: "Custom kernels development" },
+  { name: "neural-symbolic", color: "cf222e", description: "Neural-symbolic computing" },
+  { name: "validation", color: "8957e5", description: "Data validation" },
+  { name: "documentation", color: "1a7f37", description: "Documentation and guides" },
+  { name: "e2e-testing", color: "a40e26", description: "End-to-end testing" },
+  { name: "pipeline", color: "fb8500", description: "Data processing pipelines" },
+  { name: "api", color: "219653", description: "API development" },
+  { name: "rest", color: "0969da", description: "REST API interfaces" },
+  { name: "websocket", color: "8b5cf6", description: "WebSocket interfaces" },
+  { name: "unity3d", color: "000000", description: "Unity3D integration" },
+  { name: "ros", color: "22577a", description: "Robot Operating System integration" },
+  { name: "embodiment", color: "38a3a5", description: "Embodied cognition interfaces" },
+  { name: "bindings", color: "57cc99", description: "Language bindings" },
+  { name: "integration", color: "80ed99", description: "System integration" },
+  { name: "robotics", color: "c9ada7", description: "Robotics applications" },
+  { name: "meta-cognition", color: "f2cc8f", description: "Meta-cognitive systems" },
+  { name: "feedback", color: "f07167", description: "Feedback mechanisms" },
+  { name: "moses", color: "0081a7", description: "MOSES evolutionary algorithm" },
+  { name: "evolution", color: "00afb9", description: "Evolutionary algorithms" },
+  { name: "optimization", color: "fdfcdc", description: "System optimization" },
+  { name: "self-tuning", color: "fed9b7", description: "Self-tuning systems" },
+  { name: "evolutionary", color: "f07167", description: "Evolutionary computation" },
+  { name: "metrics", color: "00f5ff", description: "Performance metrics" },
+  { name: "recursion", color: "8338ec", description: "Recursive algorithms" },
+  { name: "coverage", color: "3a86ff", description: "Test coverage" },
+  { name: "flowcharts", color: "06ffa5", description: "Flowchart generation" },
+  { name: "unification", color: "ffbe0b", description: "System unification" },
+  { name: "synthesis", color: "fb5607", description: "Component synthesis" },
+  { name: "emergent-properties", color: "ff006e", description: "Emergent system properties" }
+];
+
+// Function to ensure all required labels exist
+async function ensureLabels() {
+  if (DRY_RUN) {
+    console.log('🏷️  [DRY RUN] Would check and create labels if needed...');
+    return;
+  }
+  
+  try {
+    console.log('🏷️  Ensuring required labels exist...');
+    
+    // Get existing labels
+    const { data: existingLabels } = await octokit.rest.issues.listLabelsForRepo({
+      owner: REPO_OWNER,
+      repo: REPO_NAME
+    });
+    
+    const existingLabelNames = new Set(existingLabels.map(l => l.name));
+    
+    // Create missing labels
+    let createdCount = 0;
+    let existingCount = 0;
+    
+    for (const label of requiredLabels) {
+      if (!existingLabelNames.has(label.name)) {
+        await octokit.rest.issues.createLabel({
+          owner: REPO_OWNER,
+          repo: REPO_NAME,
+          name: label.name,
+          color: label.color,
+          description: label.description
+        });
+        console.log(`   ✅ Created label: ${label.name}`);
+        createdCount++;
+      } else {
+        console.log(`   ✓ Label exists: ${label.name}`);
+        existingCount++;
+      }
+    }
+    
+    console.log(`🏷️  Label check complete: ${existingCount} existing, ${createdCount} created\n`);
+    
+  } catch (error) {
+    console.error('❌ Error ensuring labels:', error.message);
+    if (!GITHUB_TOKEN) {
+      console.error('   💡 Make sure GITHUB_TOKEN environment variable is set');
+    }
+    process.exit(1);
+  }
+}
 
 // Phase definitions based on the issue description
 const phases = {
@@ -209,11 +322,14 @@ ${flowchartSection}
 }
 
 // Main function
-function main() {
+async function main() {
   console.log('🚀 Creating Cognitive Network Issues...');
   console.log(`Phase: ${PHASE}`);
   console.log(`Dry Run: ${DRY_RUN}`);
   console.log('');
+  
+  // Ensure all required labels exist before creating issues
+  await ensureLabels();
 
   // Determine which phases to process
   const phasesToProcess = PHASE === 'all' ? Object.keys(phases) : [PHASE];
@@ -275,5 +391,8 @@ This phase follows recursive modularity principles and requires:
 
 // Run the script
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    console.error('❌ Script execution failed:', error.message);
+    process.exit(1);
+  });
 }

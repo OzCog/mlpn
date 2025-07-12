@@ -11,8 +11,8 @@
   "bugs": {
     "url": "https://github.com/frappe/erpnext/issues"
   },
-  "devDependencies": {},
   "dependencies": {
+    "@octokit/rest": "^22.0.0",
     "onscan.js": "^1.5.2"
   }
 }
