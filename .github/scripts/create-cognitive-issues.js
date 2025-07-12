@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const { Octokit } = require("@octokit/rest");
+import { execSync } from 'child_process';
+import { Octokit } from "@octokit/rest";
 
 // Configuration
 const REPO_OWNER = 'OzCog';
@@ -390,9 +390,8 @@ This phase follows recursive modularity principles and requires:
 }
 
 // Run the script
-if (require.main === module) {
-  main().catch(error => {
-    console.error('❌ Script execution failed:', error.message);
-    process.exit(1);
-  });
-}
+// In ES modules, we can directly call main() since import.meta.url will be the entry point
+main().catch(error => {
+  console.error('❌ Script execution failed:', error.message);
+  process.exit(1);
+});
