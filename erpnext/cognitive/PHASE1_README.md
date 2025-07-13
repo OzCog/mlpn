@@ -262,3 +262,54 @@ Phase 1 implementation successfully demonstrates:
 ## Next Steps
 
 Phase 1 provides the foundational atomic vocabulary and translation mechanisms. Phase 2 will build upon this foundation to implement ECAN attention allocation and resource kernel construction, adding cognitive wages, rents, and attention spreading mechanisms to the hypergraph representation.
+
+## Hypergraph Fragment Flowcharts
+
+Phase 1 includes comprehensive visualization capabilities through the `hypergraph_visualizer.py` module:
+
+### Generated Flowcharts
+
+1. **Phase 1 Hypergraph Fragment** - Basic hypergraph structure showing nodes and edges
+2. **ko6ml ↔ AtomSpace Translation Diagram** - Bidirectional translation visualization  
+3. **Tensor Fragment Operations** - Grid/hierarchical decomposition and composition
+4. **Attention Allocation Heatmap** - ECAN attention spreading visualization
+5. **Comprehensive Architecture Flowchart** - Complete Phase 1 system overview
+
+### Visualization Features
+
+```python
+from erpnext.cognitive.hypergraph_visualizer import HypergraphVisualizer
+
+# Create visualizer
+visualizer = HypergraphVisualizer(output_dir="/tmp/viz")
+
+# Generate all Phase 1 flowcharts
+files = visualizer.generate_all_phase1_visualizations(phase1_data)
+```
+
+The visualizations demonstrate:
+- Hypergraph node relationships and edge types
+- ko6ml primitive translations to AtomSpace patterns
+- Tensor fragment decomposition strategies
+- Attention allocation heat patterns
+- Complete cognitive architecture integration
+
+### Usage in Demonstrations
+
+Run the comprehensive demo with visualization:
+
+```bash
+cd erpnext/cognitive
+python3 phase1_demo_with_visualization.py
+```
+
+This generates all required hypergraph fragment flowcharts as specified in the Phase 1 implementation details.
+
+### Generated Files
+
+The visualization system creates the following flowchart files:
+- `phase_1_hypergraph_fragment_flowchart.png`
+- `ko6ml_to_atomspace_translation_diagram.png`
+- `tensor_fragment_operations_visualization.png`
+- `attention_allocation_heatmap_heatmap.png`
+- `phase_1_comprehensive_architecture_flowchart.png`
