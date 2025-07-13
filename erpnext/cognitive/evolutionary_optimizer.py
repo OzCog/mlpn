@@ -375,8 +375,14 @@ class GeneticOperators:
     def crossover(self, parent1: Genome, parent2: Genome) -> Tuple[Genome, Genome]:
         """Create offspring through crossover"""
         if random.random() > self.crossover_rate:
-            # No crossover, return copies of parents
-            return copy.deepcopy(parent1), copy.deepcopy(parent2)
+            # No crossover, return copies of parents with lineage tracking
+            child1 = copy.deepcopy(parent1)
+            child2 = copy.deepcopy(parent2)
+            child1.config_id = f"copy_{parent1.config_id}_{int(time.time()*1000)}"
+            child2.config_id = f"copy_{parent2.config_id}_{int(time.time()*1000)}"
+            child1.parent_ids = [parent1.config_id]
+            child2.parent_ids = [parent2.config_id]
+            return child1, child2
             
         # Create offspring
         child1 = Genome(
