@@ -424,7 +424,7 @@ class WebAgentIntegrationAdapter:
                 
             except Exception as e:
                 logger.error(f"Visualization creation error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                return jsonify({"error": "An internal error has occurred."}), 500
         
         @self.app.route('/api/mesh/state', methods=['GET'])
         def get_mesh_state():
