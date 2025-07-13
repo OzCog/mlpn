@@ -560,6 +560,34 @@ class NeuralSymbolicSynthesizer:
             attention_vals = np.random.randn(neural_input.shape[0]).astype(np.float32) * 0.1
             focus = np.random.randn(neural_input.shape[1]).astype(np.float32) * 0.1
             inputs = [neural_input, attention_vals, focus]
+        elif synthesis_type == "hypergraph_convolution":
+            # Add hypergraph structure for convolution
+            # Ensure proper dimensional alignment
+            if len(neural_input.shape) == 1:
+                # Reshape 1D input to 2D for node features
+                n_nodes = min(neural_input.shape[0], 20)
+                node_features = neural_input[:n_nodes].reshape(n_nodes, 1)
+                # Pad to expected dimensions
+                if node_features.shape[1] < 256:
+                    padding = np.zeros((n_nodes, 256 - node_features.shape[1]), dtype=np.float32)
+                    node_features = np.concatenate([node_features, padding], axis=1)
+            else:
+                # Use first 20 nodes and ensure 256 features
+                n_nodes = min(neural_input.shape[0], 20)
+                if neural_input.shape[1] >= 256:
+                    node_features = neural_input[:n_nodes, :256].astype(np.float32)
+                else:
+                    # Pad features to 256 dimensions
+                    padding = np.zeros((n_nodes, 256 - neural_input.shape[1]), dtype=np.float32)
+                    node_features = np.concatenate([neural_input[:n_nodes], padding], axis=1)
+            
+            # Create edge features with proper dimensions
+            n_edges = min(15, n_nodes // 2)
+            edge_features = np.random.randn(n_edges, 128).astype(np.float32) * 0.1
+            
+            # Create adjacency matrix as hypergraph structure
+            structure = np.random.choice([0, 1], size=(n_nodes, n_nodes), p=[0.8, 0.2]).astype(np.float32)
+            inputs = [node_features, edge_features, structure]
             
         result = self.registry.execute_kernel(synthesis_type, inputs)
         
