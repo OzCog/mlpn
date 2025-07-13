@@ -190,8 +190,8 @@ class CognitiveAPIServer:
                 })
                 
             except Exception as e:
-                logger.error(f"Synthesis error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                logger.error("Synthesis error", exc_info=True)
+                return jsonify({"error": "An internal error occurred. Please try again later."}), 500
         
         @self.app.route('/cognitive/tasks', methods=['POST'])
         def create_task():
@@ -217,8 +217,8 @@ class CognitiveAPIServer:
                 })
                 
             except Exception as e:
-                logger.error(f"Task creation error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                logger.error("Task creation error", exc_info=True)
+                return jsonify({"error": "An internal error occurred. Please try again later."}), 500
         
         @self.app.route('/cognitive/tasks/<task_id>', methods=['GET'])
         def get_task(task_id):
