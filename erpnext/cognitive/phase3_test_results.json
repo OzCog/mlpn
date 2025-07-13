@@ -1,0 +1,314 @@
+{
+  "neural_symbolic_kernels": {
+    "kernel_registry": {
+      "success": true,
+      "registered_kernels": 4,
+      "kernel_names": [
+        "conceptual_embedding",
+        "logical_inference",
+        "attention_allocation",
+        "hypergraph_convolution"
+      ],
+      "stats": {
+        "registered_kernels": 4,
+        "total_operations": 0,
+        "kernel_names": [
+          "conceptual_embedding",
+          "logical_inference",
+          "attention_allocation",
+          "hypergraph_convolution"
+        ],
+        "memory_requirements": {
+          "conceptual_embedding": 524288,
+          "logical_inference": 65536,
+          "attention_allocation": 2097152,
+          "hypergraph_convolution": 2560000
+        }
+      }
+    },
+    "individual_kernels": {
+      "conceptual_embedding": {
+        "success": true,
+        "input_shapes": [
+          [
+            128
+          ],
+          [
+            64
+          ]
+        ],
+        "output_shape": [
+          128
+        ],
+        "signature": {
+          "operation_name": "ggml_conceptual_embedding",
+          "complexity": "O(d\u00b2)",
+          "parallelizable": true
+        }
+      },
+      "logical_inference": {
+        "success": true,
+        "input_shapes": [
+          [
+            64
+          ],
+          [
+            64
+          ],
+          [
+            1
+          ]
+        ],
+        "output_shape": [
+          64
+        ]
+      },
+      "attention_allocation": {
+        "success": true,
+        "input_shapes": [
+          [
+            10,
+            128
+          ],
+          [
+            10
+          ],
+          [
+            128
+          ]
+        ],
+        "output_shape": [
+          10,
+          128
+        ]
+      },
+      "hypergraph_convolution": {
+        "success": true,
+        "input_shapes": [
+          [
+            20,
+            64
+          ],
+          [
+            15,
+            32
+          ],
+          [
+            20,
+            20
+          ]
+        ],
+        "output_shape": [
+          20,
+          64
+        ]
+      }
+    }
+  },
+  "neural_symbolic_synthesizer": {
+    "creation": {
+      "success": true,
+      "available_kernels": [
+        "conceptual_embedding",
+        "logical_inference",
+        "attention_allocation",
+        "hypergraph_convolution"
+      ]
+    },
+    "basic_synthesis": {
+      "success": true,
+      "neural_input_shape": [
+        256
+      ],
+      "output_shape": [
+        512
+      ],
+      "synthesis_count": 1,
+      "avg_execution_time": 0.0003719329833984375
+    },
+    "multiple_synthesis": {
+      "success": true,
+      "test_cases": 3,
+      "results_different": true,
+      "final_stats": {
+        "total_syntheses": 3,
+        "registry_stats": {
+          "registered_kernels": 4,
+          "total_operations": 3,
+          "kernel_names": [
+            "conceptual_embedding",
+            "logical_inference",
+            "attention_allocation",
+            "hypergraph_convolution"
+          ],
+          "memory_requirements": {
+            "conceptual_embedding": 524288,
+            "logical_inference": 65536,
+            "attention_allocation": 2097152,
+            "hypergraph_convolution": 2560000
+          }
+        },
+        "performance_metrics": {
+          "conceptual_embedding_0": {
+            "execution_time": 0.0003027915954589844,
+            "input_shapes": [
+              [
+                256
+              ],
+              [
+                256
+              ]
+            ],
+            "output_shape": [
+              512
+            ],
+            "memory_used": 4096
+          },
+          "conceptual_embedding_1": {
+            "execution_time": 0.00024199485778808594,
+            "input_shapes": [
+              [
+                256
+              ],
+              [
+                256
+              ]
+            ],
+            "output_shape": [
+              512
+            ],
+            "memory_used": 4096
+          },
+          "conceptual_embedding_2": {
+            "execution_time": 0.000232696533203125,
+            "input_shapes": [
+              [
+                256
+              ],
+              [
+                256
+              ]
+            ],
+            "output_shape": [
+              512
+            ],
+            "memory_used": 4096
+          }
+        },
+        "average_execution_time": 0.00025916099548339844
+      }
+    }
+  },
+  "benchmarking_system": {
+    "creation": {
+      "success": true,
+      "system_info_keys": [
+        "platform",
+        "processor",
+        "python_version",
+        "numpy_version",
+        "cpu_count",
+        "memory_total",
+        "memory_available"
+      ]
+    },
+    "single_operation": {
+      "success": true,
+      "execution_time": 8.526599998504025e-06,
+      "throughput": 117280.04130315108,
+      "memory_usage": 22000
+    },
+    "kernel_registry": {
+      "success": true,
+      "total_results": 8,
+      "summary_stats": {
+        "total_operations": 8,
+        "execution_time": {
+          "mean": 0.001178484125004786,
+          "median": 0.00024426900000094063,
+          "std": 0.002234016065529199,
+          "min": 9.656099996391276e-06,
+          "max": 0.006505126700005803
+        },
+        "throughput": {
+          "mean": 28941.136781714453,
+          "median": 6419.923797742605,
+          "total": 231529.09425371562
+        },
+        "memory_usage": {
+          "mean": 53811,
+          "total": 430488,
+          "max": 189200
+        }
+      }
+    }
+  },
+  "performance_characteristics": {
+    "kernel_performance": {
+      "success": true,
+      "benchmarks": {
+        "conceptual_embedding": {
+          "avg_execution_time": 9.119987487792968e-05,
+          "total_time": 0.004559993743896484,
+          "operations_per_second": 10964.927324061488,
+          "memory_requirement": 524288,
+          "complexity": "O(d\u00b2)"
+        },
+        "logical_inference": {
+          "avg_execution_time": 1.4052391052246093e-05,
+          "total_time": 0.0007026195526123047,
+          "operations_per_second": 71162.26671191042,
+          "memory_requirement": 65536,
+          "complexity": "O(d\u00b2)"
+        },
+        "attention_allocation": {
+          "avg_execution_time": 0.003506026268005371,
+          "total_time": 0.17530131340026855,
+          "operations_per_second": 285.22319103128524,
+          "memory_requirement": 2097152,
+          "complexity": "O(n\u00b2d)"
+        },
+        "hypergraph_convolution": {
+          "avg_execution_time": 0.024735589027404786,
+          "total_time": 1.2367794513702393,
+          "operations_per_second": 40.42757982808054,
+          "memory_requirement": 2560000,
+          "complexity": "O(n\u00b2d)"
+        }
+      },
+      "total_benchmark_time": 1.4199414253234863,
+      "average_execution_time": 0.007086716890335083,
+      "total_throughput": 82452.84480683127
+    },
+    "scalability": {
+      "success": true,
+      "results": {
+        "128": {
+          "execution_time": 0.0019707679748535156,
+          "ops_per_second": 2537.08202274377
+        },
+        "256": {
+          "execution_time": 0.001708984375,
+          "ops_per_second": 2925.714285714286
+        },
+        "512": {
+          "execution_time": 0.0017116069793701172,
+          "ops_per_second": 2921.231369271486
+        },
+        "1024": {
+          "execution_time": 0.001642465591430664,
+          "ops_per_second": 3044.203803164465
+        }
+      }
+    }
+  },
+  "summary": {
+    "timestamp": 1752423123.6630204,
+    "total_execution_time": 1.790738582611084,
+    "total_tests": 13,
+    "passed_tests": 13,
+    "failed_tests": 0,
+    "success_rate": 100.0,
+    "overall_status": "PASSED"
+  }
+}
