@@ -3,6 +3,7 @@ ECAN Attention Allocation System
 
 Implements economic attention allocation with cognitive 'wages' and 'rents',
 activation spreading, and attention tensor visualization.
+Enhanced for Phase 2 with dynamic mesh integration and resource management.
 """
 
 import numpy as np
@@ -12,6 +13,25 @@ from enum import Enum
 import time
 import json
 from collections import defaultdict
+
+# Import ResourceType for mesh integration
+try:
+    from .resource_kernel import ResourceType, ResourcePriority
+except ImportError:
+    # Fallback definitions if resource_kernel not available
+    class ResourceType(Enum):
+        ATTENTION = "attention"
+        MEMORY = "memory"
+        COMPUTATION = "computation"
+        BANDWIDTH = "bandwidth"
+        INFERENCE = "inference"
+    
+    class ResourcePriority(Enum):
+        CRITICAL = 1
+        HIGH = 2
+        NORMAL = 3
+        LOW = 4
+        BACKGROUND = 5
 
 
 class AttentionType(Enum):
@@ -340,23 +360,51 @@ class AttentionVisualizer:
 
 class ECANAttention:
     """
-    Main ECAN attention allocation system
+    Main ECAN attention allocation system with dynamic mesh integration
     """
     
-    def __init__(self, atomspace_connections: Dict[str, List[str]] = None):
+    def __init__(self, atomspace_connections: Dict[str, List[str]] = None, 
+                 node_id: str = "local_ecan", resource_kernel = None):
         self.attention_bank = AttentionBank()
         self.connections = atomspace_connections or {}
         self.activation_spreader = ActivationSpreading(self.connections)
         self.visualizer = AttentionVisualizer()
         
+        # Phase 2 enhancements
+        self.node_id = node_id
+        self.resource_kernel = resource_kernel
+        self.mesh_nodes: Dict[str, Dict[str, Any]] = {}
+        self.distributed_attention: Dict[str, Dict[str, float]] = {}
+        self.attention_mesh_sync_interval = 5.0  # seconds
+        self.last_mesh_sync = time.time()
+        
+        # Enhanced economic parameters
+        self.mesh_economic_params = {
+            "attention_exchange_rate": 1.0,
+            "mesh_wage_factor": 0.1,
+            "mesh_rent_factor": 0.05,
+            "sync_cost_threshold": 0.01
+        }
+        
     def focus_attention(self, atom_id: str, focus_strength: float = 1.0) -> None:
         """
-        Focus attention on a specific atom
+        Focus attention on a specific atom with resource management
         
         Args:
             atom_id: ID of the atom to focus on
             focus_strength: Strength of focus
         """
+        # Request resources if resource kernel is available
+        if self.resource_kernel:
+            resource_needed = focus_strength * 10.0  # Heuristic calculation
+            request_id = self.resource_kernel.request_resource(
+                requester_id=f"ecan_{self.node_id}",
+                resource_type=ResourceType.ATTENTION,
+                amount=resource_needed,
+                priority=ResourcePriority.NORMAL,
+                duration=30.0
+            )
+        
         # Allocate immediate attention
         self.attention_bank.allocate_attention(
             atom_id, AttentionType.STI, focus_strength
@@ -369,6 +417,9 @@ class ECANAttention:
                 self.attention_bank.allocate_attention(
                     connected_atom, AttentionType.STI, spread_strength
                 )
+        
+        # Spread to mesh nodes if available
+        self._spread_attention_to_mesh(atom_id, focus_strength)
                 
     def update_attention_economy(self) -> None:
         """Update the attention economy by allocating wages and rents"""
@@ -461,3 +512,161 @@ class ECANAttention:
        atoms))
 """
         return spec.strip()
+
+    def register_mesh_node(self, node_id: str, node_capabilities: Dict[str, Any]) -> None:
+        """
+        Register a mesh node for distributed attention allocation
+        
+        Args:
+            node_id: ID of the mesh node
+            node_capabilities: Capabilities and resources of the node
+        """
+        self.mesh_nodes[node_id] = {
+            **node_capabilities,
+            "last_seen": time.time(),
+            "status": "active",
+            "attention_capacity": node_capabilities.get("attention_capacity", 100.0),
+            "current_load": 0.0
+        }
+        
+    def _spread_attention_to_mesh(self, atom_id: str, focus_strength: float) -> None:
+        """
+        Spread attention to mesh nodes based on their capabilities
+        
+        Args:
+            atom_id: ID of the atom receiving attention
+            focus_strength: Strength of attention to spread
+        """
+        if not self.mesh_nodes:
+            return
+            
+        # Calculate mesh spreading factor
+        mesh_spread_factor = self.attention_bank.params.spreading_factor * 0.5
+        mesh_attention = focus_strength * mesh_spread_factor
+        
+        # Distribute to available mesh nodes
+        available_nodes = [
+            (node_id, info) for node_id, info in self.mesh_nodes.items()
+            if info["status"] == "active" and info["current_load"] < info["attention_capacity"] * 0.8
+        ]
+        
+        if available_nodes:
+            attention_per_node = mesh_attention / len(available_nodes)
+            
+            for node_id, node_info in available_nodes:
+                if node_id not in self.distributed_attention:
+                    self.distributed_attention[node_id] = {}
+                
+                self.distributed_attention[node_id][atom_id] = (
+                    self.distributed_attention[node_id].get(atom_id, 0.0) + attention_per_node
+                )
+                
+                # Update node load
+                node_info["current_load"] += attention_per_node
+                
+    def sync_mesh_attention(self) -> Dict[str, Any]:
+        """
+        Synchronize attention across mesh nodes
+        
+        Returns:
+            Synchronization results
+        """
+        current_time = time.time()
+        if current_time - self.last_mesh_sync < self.attention_mesh_sync_interval:
+            return {"status": "skipped", "reason": "too_frequent"}
+        
+        sync_results = {
+            "status": "completed",
+            "nodes_synced": 0,
+            "attention_exchanged": 0.0,
+            "conflicts_resolved": 0
+        }
+        
+        # Exchange attention values with mesh nodes
+        for node_id, node_attention in self.distributed_attention.items():
+            if node_id in self.mesh_nodes and self.mesh_nodes[node_id]["status"] == "active":
+                # Simulate mesh communication (in real implementation, this would be network calls)
+                exchange_amount = sum(node_attention.values())
+                
+                if exchange_amount > self.mesh_economic_params["sync_cost_threshold"]:
+                    sync_results["nodes_synced"] += 1
+                    sync_results["attention_exchanged"] += exchange_amount
+                    
+                    # Apply mesh wage factor
+                    mesh_wage = exchange_amount * self.mesh_economic_params["mesh_wage_factor"]
+                    
+                    # Distribute mesh wages back to local atoms
+                    for atom_id, attention_value in node_attention.items():
+                        if atom_id in self.attention_bank.attention_values:
+                            proportion = attention_value / exchange_amount if exchange_amount > 0 else 0
+                            wage_share = mesh_wage * proportion
+                            self.attention_bank.allocate_attention(
+                                atom_id, AttentionType.LTI, wage_share
+                            )
+        
+        self.last_mesh_sync = current_time
+        return sync_results
+        
+    def get_mesh_statistics(self) -> Dict[str, Any]:
+        """Get statistics about mesh integration"""
+        total_mesh_attention = 0.0
+        active_nodes = 0
+        
+        for node_id, node_info in self.mesh_nodes.items():
+            if node_info["status"] == "active":
+                active_nodes += 1
+                node_attention = self.distributed_attention.get(node_id, {})
+                total_mesh_attention += sum(node_attention.values())
+        
+        return {
+            "total_mesh_nodes": len(self.mesh_nodes),
+            "active_mesh_nodes": active_nodes,
+            "total_distributed_attention": total_mesh_attention,
+            "mesh_sync_interval": self.attention_mesh_sync_interval,
+            "last_sync_age": time.time() - self.last_mesh_sync,
+            "economic_params": self.mesh_economic_params
+        }
+        
+    def run_enhanced_attention_cycle(self, focus_atoms: List[str] = None, 
+                                   enable_mesh_sync: bool = True) -> Dict[str, Any]:
+        """
+        Run enhanced attention allocation cycle with mesh integration
+        
+        Args:
+            focus_atoms: List of atoms to focus on
+            enable_mesh_sync: Whether to synchronize with mesh
+            
+        Returns:
+            Cycle execution results
+        """
+        cycle_start = time.time()
+        results = {
+            "cycle_duration": 0.0,
+            "atoms_processed": 0,
+            "mesh_sync_results": None,
+            "resource_usage": {}
+        }
+        
+        # Focus on specified atoms
+        if focus_atoms:
+            for atom_id in focus_atoms:
+                self.focus_attention(atom_id)
+            results["atoms_processed"] = len(focus_atoms)
+                
+        # Run activation spreading
+        if self.activation_spreader.activation_levels:
+            self.activation_spreader.spread_activation()
+            
+        # Update attention economy
+        self.update_attention_economy()
+        
+        # Sync with mesh if enabled
+        if enable_mesh_sync:
+            results["mesh_sync_results"] = self.sync_mesh_attention()
+        
+        # Update resource usage if resource kernel available
+        if self.resource_kernel:
+            results["resource_usage"] = self.resource_kernel.get_resource_utilization()
+        
+        results["cycle_duration"] = time.time() - cycle_start
+        return results

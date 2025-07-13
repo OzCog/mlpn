@@ -1,14 +1,15 @@
 """
-Resource Kernel Construction for Distributed Cognitive Mesh
+Resource Kernel for Dynamic ECAN Attention Allocation & Distributed Cognitive Mesh
 
-Implements resource allocation kernels for managing computational resources,
-memory, and attention across the distributed cognitive mesh.
+Implements resource management, allocation scheduling, and distributed
+cognitive mesh integration for Phase 2 of the cognitive architecture.
+This includes both local resource kernels and distributed resource management.
 """
 
 import numpy as np
 import time
-from typing import Dict, List, Tuple, Any, Optional
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Tuple, Any, Optional, Set
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 from collections import defaultdict, deque
 import threading
@@ -17,12 +18,23 @@ import json
 
 
 class ResourceType(Enum):
-    """Types of resources in the cognitive mesh"""
+    """Types of cognitive resources"""
     COMPUTE = "compute"
     MEMORY = "memory"
     ATTENTION = "attention"
     BANDWIDTH = "bandwidth"
     STORAGE = "storage"
+    INFERENCE = "inference"
+    COMPUTATION = "computation"  # Alias for backwards compatibility
+
+
+class ResourcePriority(Enum):
+    """Resource allocation priorities"""
+    CRITICAL = 1
+    HIGH = 2
+    NORMAL = 3
+    LOW = 4
+    BACKGROUND = 5
 
 
 class AllocationStrategy(Enum):
@@ -35,6 +47,20 @@ class AllocationStrategy(Enum):
 
 
 @dataclass
+class ResourceQuota:
+    """Resource quota specification"""
+    resource_type: ResourceType
+    max_allocation: float
+    current_usage: float = 0.0
+    reserved: float = 0.0
+    
+    @property
+    def available(self) -> float:
+        """Get available resource amount"""
+        return max(0.0, self.max_allocation - self.current_usage - self.reserved)
+
+
+@dataclass
 class ResourceRequest:
     """Request for resource allocation"""
     request_id: str
@@ -43,11 +69,17 @@ class ResourceRequest:
     amount: float
     priority: int
     deadline: float  # Unix timestamp
+    duration_estimate: float = 0.0
+    timestamp: float = field(default_factory=time.time)
     metadata: Dict[str, Any] = None
     
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = {}
+    
+    def is_expired(self) -> bool:
+        """Check if request has expired"""
+        return time.time() > self.deadline
 
 
 @dataclass
@@ -62,6 +94,12 @@ class ResourceAllocation:
     provider_id: str
     consumer_id: str
     cost: float = 0.0
+    actual_usage: float = 0.0
+    
+    @property
+    def is_expired(self) -> bool:
+        """Check if allocation has expired"""
+        return time.time() > self.expires_at
 
 
 @dataclass
@@ -90,18 +128,30 @@ class ResourceKernel:
     Core resource management kernel for distributed cognitive agents
     """
     
-    def __init__(self, agent_id: str, strategy: AllocationStrategy = AllocationStrategy.LOAD_BALANCED):
+    def __init__(self, agent_id: str = "local_node", strategy: AllocationStrategy = AllocationStrategy.LOAD_BALANCED):
         self.agent_id = agent_id
+        self.node_id = agent_id  # Alias for backwards compatibility
         self.strategy = strategy
         self.resource_pools: Dict[ResourceType, ResourcePool] = {}
+        self.quotas: Dict[ResourceType, ResourceQuota] = {}
         self.active_allocations: Dict[str, ResourceAllocation] = {}
         self.pending_requests: List[ResourceRequest] = []
         self.allocation_history: List[ResourceAllocation] = []
         self.performance_metrics: Dict[str, float] = defaultdict(float)
+        self.mesh_nodes: Dict[str, Dict[str, Any]] = {}
         self.lock = threading.RLock()
         
-        # Initialize default resource pools
+        # Performance metrics
+        self.metrics = {
+            "requests_processed": 0,
+            "allocations_made": 0,
+            "total_resource_time": 0.0,
+            "average_response_time": 0.0
+        }
+        
+        # Initialize default resource pools and quotas
         self._initialize_resource_pools()
+        self._initialize_quotas()
         
     def _initialize_resource_pools(self):
         """Initialize default resource pools"""
@@ -135,14 +185,30 @@ class ResourceKernel:
                 total_capacity=5000.0,  # MB
                 available_capacity=5000.0,
                 allocated_amount=0.0
+            ),
+            ResourceType.INFERENCE: ResourcePool(
+                resource_type=ResourceType.INFERENCE,
+                total_capacity=50.0,
+                available_capacity=50.0,
+                allocated_amount=0.0
             )
         }
         
         self.resource_pools.update(default_pools)
+    
+    def _initialize_quotas(self):
+        """Initialize resource quotas"""
+        for resource_type, pool in self.resource_pools.items():
+            self.quotas[resource_type] = ResourceQuota(
+                resource_type=resource_type,
+                max_allocation=pool.total_capacity,
+                current_usage=0.0,
+                reserved=0.0
+            )
         
     def request_resource(self, resource_type: ResourceType, amount: float, 
                         priority: int = 1, deadline: float = None,
-                        requester_id: str = None) -> str:
+                        requester_id: str = None, duration_estimate: float = 0.0) -> str:
         """
         Request resource allocation
         
@@ -152,6 +218,7 @@ class ResourceKernel:
             priority: Request priority (1-10, higher = more urgent)
             deadline: Request deadline (Unix timestamp)
             requester_id: ID of the requesting agent
+            duration_estimate: Estimated duration of resource usage
             
         Returns:
             Request ID
@@ -170,11 +237,13 @@ class ResourceKernel:
             resource_type=resource_type,
             amount=amount,
             priority=priority,
-            deadline=deadline
+            deadline=deadline,
+            duration_estimate=duration_estimate
         )
         
         with self.lock:
             self.pending_requests.append(request)
+            self.metrics["requests_processed"] += 1
             
         # Try immediate allocation
         allocation_id = self._try_allocate_request(request)
@@ -193,13 +262,22 @@ class ResourceKernel:
         """
         with self.lock:
             resource_pool = self.resource_pools.get(request.resource_type)
-            if not resource_pool:
+            quota = self.quotas.get(request.resource_type)
+            
+            if not resource_pool or not quota:
                 return None
                 
             # Check if enough resources are available
-            if resource_pool.available_capacity >= request.amount:
+            if (resource_pool.available_capacity >= request.amount and
+                quota.available >= request.amount):
+                
                 # Create allocation
                 allocation_id = f"alloc_{int(time.time() * 1000000)}"
+                
+                # Calculate expiration time
+                expires_at = request.deadline
+                if request.duration_estimate > 0:
+                    expires_at = min(expires_at, time.time() + request.duration_estimate)
                 
                 allocation = ResourceAllocation(
                     allocation_id=allocation_id,
@@ -207,15 +285,16 @@ class ResourceKernel:
                     resource_type=request.resource_type,
                     amount=request.amount,
                     allocated_at=time.time(),
-                    expires_at=request.deadline,
+                    expires_at=expires_at,
                     provider_id=self.agent_id,
                     consumer_id=request.requester_id,
                     cost=self._calculate_resource_cost(request)
                 )
                 
-                # Update resource pool
+                # Update resource pool and quota
                 resource_pool.available_capacity -= request.amount
                 resource_pool.allocated_amount += request.amount
+                quota.current_usage += request.amount
                 
                 # Record allocation
                 self.active_allocations[allocation_id] = allocation
@@ -227,6 +306,7 @@ class ResourceKernel:
                 
                 # Update performance metrics
                 self.performance_metrics["successful_allocations"] += 1
+                self.metrics["allocations_made"] += 1
                 
                 return allocation_id
                 
@@ -278,11 +358,13 @@ class ResourceKernel:
                 
             allocation = self.active_allocations[allocation_id]
             resource_pool = self.resource_pools.get(allocation.resource_type)
+            quota = self.quotas.get(allocation.resource_type)
             
-            if resource_pool:
+            if resource_pool and quota:
                 # Return resources to pool
                 resource_pool.available_capacity += allocation.amount
                 resource_pool.allocated_amount -= allocation.amount
+                quota.current_usage -= allocation.amount
                 
                 # Remove allocation
                 del self.active_allocations[allocation_id]
@@ -319,7 +401,7 @@ class ResourceKernel:
             
         for request in requests_to_process:
             # Check if deadline has passed
-            if time.time() > request.deadline:
+            if request.is_expired():
                 with self.lock:
                     self.pending_requests = [r for r in self.pending_requests 
                                            if r.request_id != request.request_id]
@@ -345,7 +427,7 @@ class ResourceKernel:
         
         with self.lock:
             for allocation_id, allocation in self.active_allocations.items():
-                if current_time > allocation.expires_at:
+                if allocation.is_expired:
                     expired_allocations.append(allocation_id)
                     
         cleanup_count = 0
@@ -385,6 +467,7 @@ class ResourceKernel:
         """
         with self.lock:
             metrics = dict(self.performance_metrics)
+            metrics.update(self.metrics)
             metrics.update({
                 "active_allocations": len(self.active_allocations),
                 "pending_requests": len(self.pending_requests),
@@ -396,6 +479,20 @@ class ResourceKernel:
             })
             
         return metrics
+
+    def register_mesh_node(self, node_id: str, node_info: Dict[str, Any]):
+        """Register a mesh node for distributed operations"""
+        with self.lock:
+            self.mesh_nodes[node_id] = node_info
+            
+    def get_mesh_status(self) -> Dict[str, Any]:
+        """Get status of the mesh network"""
+        with self.lock:
+            return {
+                "local_node": self.node_id,
+                "connected_nodes": len(self.mesh_nodes),
+                "mesh_nodes": dict(self.mesh_nodes)
+            }
         
     def optimize_allocations(self) -> Dict[str, Any]:
         """
@@ -472,6 +569,66 @@ class ResourceKernel:
     (list reallocated freed-resources)))
 """
         return spec.strip()
+
+
+class AttentionScheduler:
+    """
+    Attention scheduling system integrated with resource kernel
+    """
+    
+    def __init__(self, resource_kernel: ResourceKernel):
+        self.resource_kernel = resource_kernel
+        self.attention_requests: deque = deque()
+        self.active_attention_tasks: Dict[str, Dict[str, Any]] = {}
+        self.lock = threading.Lock()
+        
+    def schedule_attention(self, task_id: str, attention_amount: float,
+                          priority: ResourcePriority = ResourcePriority.NORMAL,
+                          duration: float = 60.0) -> bool:
+        """
+        Schedule attention allocation for a cognitive task
+        
+        Args:
+            task_id: Unique identifier for the task
+            attention_amount: Amount of attention required
+            priority: Priority level for the task
+            duration: Expected duration in seconds
+            
+        Returns:
+            True if attention was successfully scheduled
+        """
+        request_id = self.resource_kernel.request_resource(
+            resource_type=ResourceType.ATTENTION,
+            amount=attention_amount,
+            priority=priority.value,
+            deadline=time.time() + duration,
+            duration_estimate=duration
+        )
+        
+        if request_id:
+            with self.lock:
+                self.attention_requests.append({
+                    "task_id": task_id,
+                    "request_id": request_id,
+                    "amount": attention_amount,
+                    "priority": priority,
+                    "scheduled_at": time.time()
+                })
+            return True
+            
+        return False
+    
+    def get_attention_status(self) -> Dict[str, Any]:
+        """Get current attention allocation status"""
+        with self.lock:
+            return {
+                "pending_requests": len(self.attention_requests),
+                "active_tasks": len(self.active_attention_tasks),
+                "total_attention_allocated": sum(
+                    alloc.amount for alloc in self.resource_kernel.active_allocations.values()
+                    if alloc.resource_type == ResourceType.ATTENTION
+                )
+            }
 
 
 class DistributedResourceManager:
@@ -704,7 +861,7 @@ class DistributedResourceManager:
         total_allocation_time = 0.0
         
         # Prepare random test data
-        resource_types = list(ResourceType)
+        resource_types = [rt for rt in ResourceType if rt != ResourceType.COMPUTATION]  # Exclude alias
         agent_ids = list(self.resource_kernels.keys())
         
         for i in range(iterations):
@@ -752,29 +909,14 @@ class DistributedResourceManager:
             "global_stats": self.get_global_resource_stats()
         }
         
-    def scheme_resource_spec(self) -> str:
+    def scheme_distributed_spec(self) -> str:
         """
-        Generate Scheme specification for resource management
+        Generate Scheme specification for distributed resource management
         
         Returns:
             Scheme specification string
         """
         spec = """
-(define (resource-request kernel type amount priority)
-  (let ((request-id (generate-request-id)))
-    (kernel-add-request kernel 
-      (make-request request-id type amount priority (current-time)))
-    request-id))
-
-(define (resource-allocate kernel request)
-  (let ((pool (kernel-get-pool kernel (request-type request))))
-    (if (>= (pool-available pool) (request-amount request))
-        (let ((allocation-id (generate-allocation-id)))
-          (pool-allocate! pool (request-amount request))
-          (kernel-add-allocation kernel allocation-id request)
-          allocation-id)
-        #f)))
-
 (define (distributed-resource-find-provider managers type amount)
   (let ((best-provider #f)
         (best-score 0))
