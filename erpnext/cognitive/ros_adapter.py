@@ -160,9 +160,10 @@ class ROSProtocol:
 class ROSIntegrationAdapter:
     """Main adapter for ROS embodiment integration"""
     
-    def __init__(self, port: int = 8888, ros_master_uri: str = "http://localhost:11311"):
+    def __init__(self, port: int = 8888, ros_master_uri: str = "http://localhost:11311", bind_address: str = "127.0.0.1"):
         self.port = port
         self.ros_master_uri = ros_master_uri
+        self.bind_address = bind_address
         
         # Connection management
         self.server_socket = None
@@ -200,7 +201,7 @@ class ROSIntegrationAdapter:
         """Start the ROS integration server"""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind(('0.0.0.0', self.port))
+        self.server_socket.bind((self.bind_address, self.port))
         self.server_socket.listen(5)
         
         self.running = True
