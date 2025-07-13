@@ -610,7 +610,9 @@ class Phase5AcceptanceTest(unittest.TestCase):
         """Generate final acceptance criteria validation summary"""
         print("\n📋 Generating Acceptance Criteria Summary...")
         
-        # Verify all required tests passed
+        # Ensure all tests have been run by checking the test results
+        # Only generate summary if all previous tests have run
+        missing_tests = []
         required_tests = [
             'real_data_implementation',
             'comprehensive_tests', 
@@ -619,6 +621,27 @@ class Phase5AcceptanceTest(unittest.TestCase):
             'integration_tests',
             'documentation'
         ]
+        
+        # Run the tests if they haven't been run yet
+        for test_name in required_tests:
+            if test_name not in self.test_results:
+                if test_name == 'real_data_implementation':
+                    self.test_real_data_implementation()
+                elif test_name == 'comprehensive_tests':
+                    self.test_comprehensive_tests()
+                elif test_name == 'recursive_modularity':
+                    self.test_recursive_modularity()
+                elif test_name == 'evolutionary_optimization':
+                    self.test_evolutionary_optimization_integration()
+                elif test_name == 'integration_tests':
+                    self.test_integration_with_existing_phases()
+                elif test_name == 'documentation':
+                    self.test_documentation_and_architecture()
+        
+        # Verify all required tests passed
+        for test_name in required_tests:
+            if test_name not in self.test_results:
+                missing_tests.append(test_name)
         
         summary = {
             'phase': 'Phase 5: Recursive Meta-Cognition & Evolutionary Optimization',
@@ -660,9 +683,12 @@ class Phase5AcceptanceTest(unittest.TestCase):
         for criterion, status in summary['acceptance_criteria'].items():
             status_icon = "✅" if status == 'PASSED' else "❌"
             print(f"   {status_icon} {criterion}: {status}")
+        
+        if missing_tests:
+            print(f"⚠️ Missing tests: {missing_tests}")
             
         # Assert overall acceptance
-        self.assertTrue(all_passed, "All acceptance criteria must pass")
+        self.assertTrue(all_passed, f"All acceptance criteria must pass. Failed tests: {[t for t in required_tests if not self.test_results.get(t, False)]}")
         
         return summary
 
