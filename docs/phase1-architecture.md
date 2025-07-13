@@ -122,6 +122,39 @@ This document provides architectural diagrams and implementation details for Pha
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Tensor Shape Specifications
+
+#### Agent/State Hypergraph Encoding with Tensor Shapes:
+
+**Attention Tensor Signature:**
+```
+T_attention ∈ ℝ^(1×512×256×8×3)
+- batch_size: 1 (single agent context)
+- sequence_length: 512 (cognitive processing window)
+- hidden_dim: 256 (attention embedding dimension)
+- num_heads: 8 (multi-head attention mechanisms)
+- recursion_depth: 3 (recursive cognitive layers)
+```
+
+**Grammar Tensor Signature:**
+```
+T_grammar ∈ ℝ^(10000×512×1024×6×1000)
+- vocab_size: 10000 (ko6ml primitive vocabulary)
+- embedding_dim: 512 (hypergraph node embeddings)
+- hidden_dim: 1024 (cognitive processing layer)
+- num_layers: 6 (hierarchical grammar depth)
+- hypergraph_nodes: 1000 (maximum nodes per fragment)
+```
+
+**Meta-Cognitive Tensor Signature:**
+```
+T_meta ∈ ℝ^(128×4×3×16)
+- state_dim: 128 (meta-cognitive state space)
+- introspection_depth: 4 (recursive introspection levels)
+- meta_tensor_rank: 3 (tensor rank for meta-operations)
+- monitoring_channels: 16 (parallel monitoring streams)
+```
+
 ## Scheme Integration Specifications
 
 The system generates functional programming specifications for all operations:
@@ -145,6 +178,80 @@ The system generates functional programming specifications for all operations:
 ;; Attention Allocation (Phase 2 preparation)
 (define (attention-allocate atom-id type value)
   (set-attention atom-id (+ (get-attention atom-id) value)))
+```
+
+## Prime Factorization Mapping
+
+### Hypergraph Density Optimization
+
+The system uses prime factorization for maximum hypergraph density and efficient indexing:
+
+```
+HypergraphAtom Structure:
+├── id: UUID identifier
+├── name: Semantic label
+├── atom_type: AtomType (CONCEPT, PREDICATE, etc.)
+├── truth_value: (strength, confidence) tuple
+└── prime_index: Unique prime number for density optimization
+```
+
+### Prime Index Assignment Algorithm
+
+```python
+def _get_next_prime(self) -> int:
+    """Prime number generation for hypergraph indexing"""
+    def is_prime(n):
+        if n < 2: return False
+        for i in range(2, int(n**0.5) + 1):
+            if n % i == 0: return False
+        return True
+    
+    while not is_prime(self.next_prime):
+        self.next_prime += 1
+    prime = self.next_prime
+    self.next_prime += 1
+    return prime
+```
+
+### Density Calculation Formula
+
+```python
+def calculate_hypergraph_density(self) -> float:
+    """
+    Density = log(∏ primes) / |atoms|
+    
+    Where:
+    - ∏ primes = product of all prime indices
+    - |atoms| = total number of atoms
+    - Result normalized to [0,1] range
+    """
+    if not self.atoms:
+        return 0.0
+    
+    prime_product = 1
+    for prime in self.prime_indices.keys():
+        prime_product *= prime
+    
+    density = np.log(prime_product) / len(self.atoms)
+    return min(density / 10.0, 1.0)  # Normalize
+```
+
+### Prime Factorization Benefits
+
+1. **Collision-Free Indexing**: Each atom gets unique prime index
+2. **Maximum Connectivity**: Leverages fundamental theorem of arithmetic
+3. **Scalable Growth**: Infinite prime sequence supports unlimited expansion
+4. **Mathematical Properties**: Enables efficient graph algorithms
+
+### Example Prime Mapping
+
+```
+Atom: "customer" → Prime: 2
+Atom: "order" → Prime: 3  
+Atom: "places_order" → Prime: 5
+Atom: "product" → Prime: 7
+
+Hypergraph Density = log(2×3×5×7) / 4 = log(210) / 4 = 1.33
 ```
 
 ## Implementation Characteristics
