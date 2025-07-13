@@ -584,6 +584,10 @@ class MetaCognitive:
             
         return stability
         
+    def get_current_state(self) -> CognitiveState:
+        """Get current cognitive state"""
+        return self.state_monitor.get_current_state()
+        
     def get_system_stats(self) -> Dict[str, Any]:
         """Get comprehensive system statistics"""
         return {
