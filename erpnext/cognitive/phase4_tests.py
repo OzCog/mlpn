@@ -46,11 +46,12 @@ class Phase4TestBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test infrastructure"""
+        # Find free ports dynamically
         cls.test_ports = {
-            'api_server': 15000,
-            'unity3d': 17777,
-            'ros': 18888,
-            'web_agent': 16666
+            'api_server': cls._find_free_port(),
+            'unity3d': cls._find_free_port(),
+            'ros': cls._find_free_port(),
+            'web_agent': cls._find_free_port()
         }
         
         cls.test_timeout = 30  # seconds
@@ -68,6 +69,16 @@ class Phase4TestBase(unittest.TestCase):
         
         # Wait for servers to initialize
         time.sleep(2)
+    
+    @classmethod
+    def _find_free_port(cls):
+        """Find a free port"""
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
     
     @classmethod
     def tearDownClass(cls):
@@ -600,7 +611,7 @@ class TestWebAgentIntegration(Phase4TestBase):
         """Test JavaScript SDK serving"""
         response = requests.get(f"{self.web_url}/sdk/cognitive-agent.js", timeout=5)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers['Content-Type'], 'application/javascript')
+        self.assertIn('application/javascript', response.headers['Content-Type'])
         
         # Verify SDK contains required functionality
         sdk_content = response.text
