@@ -25,7 +25,6 @@ class ResourceType(Enum):
     BANDWIDTH = "bandwidth"
     STORAGE = "storage"
     INFERENCE = "inference"
-    COMPUTATION = "computation"  # Alias for backwards compatibility
 
 
 class ResourcePriority(Enum):
@@ -557,6 +556,14 @@ class ResourceKernel:
           allocation-id)
         #f)))
 
+(define (process-resource-requests kernel)
+  (let ((allocated-count 0))
+    (map (lambda (request)
+           (when (resource-allocate kernel request)
+             (set! allocated-count (+ allocated-count 1))))
+         (kernel-pending-requests kernel))
+    allocated-count))
+
 (define (resource-optimize kernel)
   (let ((reallocated 0)
         (freed-resources 0.0))
@@ -580,6 +587,7 @@ class AttentionScheduler:
         self.resource_kernel = resource_kernel
         self.attention_requests: deque = deque()
         self.active_attention_tasks: Dict[str, Dict[str, Any]] = {}
+        self.attention_queue: List[Dict[str, Any]] = []  # For compatibility
         self.lock = threading.Lock()
         
     def schedule_attention(self, task_id: str, attention_amount: float,
@@ -617,6 +625,105 @@ class AttentionScheduler:
             return True
             
         return False
+    
+    def schedule_attention_cycle(self, cycle_id: str, atoms: List[str], 
+                               focus_strength: float = 1.0,
+                               priority: ResourcePriority = ResourcePriority.NORMAL,
+                               duration: float = 60.0) -> bool:
+        """
+        Schedule an attention cycle for multiple atoms (compatibility method)
+        
+        Args:
+            cycle_id: Unique identifier for the cycle
+            atoms: List of atoms to focus attention on
+            focus_strength: Strength of attention focus
+            priority: Priority level for the cycle
+            duration: Expected duration in seconds
+            
+        Returns:
+            True if cycle was scheduled successfully
+        """
+        total_attention = len(atoms) * focus_strength * 10.0
+        
+        # Schedule the resource request
+        request_id = self.resource_kernel.request_resource(
+            resource_type=ResourceType.ATTENTION,
+            amount=total_attention,
+            priority=priority.value,
+            deadline=time.time() + duration,
+            duration_estimate=duration
+        )
+        
+        if request_id:
+            with self.lock:
+                cycle_info = {
+                    "cycle_id": cycle_id,
+                    "atoms": atoms,
+                    "focus_strength": focus_strength,
+                    "priority": priority,
+                    "duration": duration,
+                    "request_id": request_id,
+                    "scheduled_at": time.time(),
+                    "status": "queued"
+                }
+                self.attention_queue.append(cycle_info)
+            return True
+            
+        return False
+    
+    def process_attention_queue(self) -> List[str]:
+        """
+        Process queued attention cycles (compatibility method)
+        
+        Returns:
+            List of executed cycle IDs
+        """
+        executed_cycles = []
+        
+        with self.lock:
+            for cycle in self.attention_queue:
+                if cycle["status"] == "queued":
+                    cycle["status"] = "executed"
+                    cycle["executed_at"] = time.time()
+                    executed_cycles.append(cycle["cycle_id"])
+                    
+        return executed_cycles
+    
+    def complete_attention_cycle(self, cycle_id: str) -> bool:
+        """
+        Mark an attention cycle as completed (compatibility method)
+        
+        Args:
+            cycle_id: ID of the cycle to complete
+            
+        Returns:
+            True if cycle was found and completed
+        """
+        with self.lock:
+            for cycle in self.attention_queue:
+                if cycle["cycle_id"] == cycle_id:
+                    cycle["status"] = "completed"
+                    cycle["completed_at"] = time.time()
+                    return True
+        return False
+    
+    def get_scheduler_stats(self) -> Dict[str, Any]:
+        """
+        Get scheduler statistics (compatibility method)
+        
+        Returns:
+            Scheduler statistics
+        """
+        with self.lock:
+            queued_count = len([c for c in self.attention_queue if c["status"] == "queued"])
+            active_count = len([c for c in self.attention_queue if c["status"] == "executed"])
+            
+            return {
+                "queued_cycles": queued_count,
+                "active_cycles": active_count,
+                "total_cycles": len(self.attention_queue),
+                "attention_requests": len(self.attention_requests)
+            }
     
     def get_attention_status(self) -> Dict[str, Any]:
         """Get current attention allocation status"""
@@ -861,7 +968,7 @@ class DistributedResourceManager:
         total_allocation_time = 0.0
         
         # Prepare random test data
-        resource_types = [rt for rt in ResourceType if rt != ResourceType.COMPUTATION]  # Exclude alias
+        resource_types = list(ResourceType)
         agent_ids = list(self.resource_kernels.keys())
         
         for i in range(iterations):
@@ -938,3 +1045,13 @@ class DistributedResourceManager:
     moves))
 """
         return spec.strip()
+        
+    def scheme_resource_spec(self) -> str:
+        """
+        Generate Scheme specification for distributed resource management
+        (Alias for scheme_distributed_spec for compatibility)
+        
+        Returns:
+            Scheme specification string
+        """
+        return self.scheme_distributed_spec()

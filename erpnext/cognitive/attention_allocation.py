@@ -22,7 +22,7 @@ except ImportError:
     class ResourceType(Enum):
         ATTENTION = "attention"
         MEMORY = "memory"
-        COMPUTATION = "computation"
+        COMPUTE = "compute"
         BANDWIDTH = "bandwidth"
         INFERENCE = "inference"
     
@@ -398,11 +398,11 @@ class ECANAttention:
         if self.resource_kernel:
             resource_needed = focus_strength * 10.0  # Heuristic calculation
             request_id = self.resource_kernel.request_resource(
-                requester_id=f"ecan_{self.node_id}",
                 resource_type=ResourceType.ATTENTION,
                 amount=resource_needed,
-                priority=ResourcePriority.NORMAL,
-                duration=30.0
+                priority=2,  # NORMAL priority as integer
+                requester_id=f"ecan_{self.node_id}",
+                duration_estimate=30.0
             )
         
         # Allocate immediate attention
