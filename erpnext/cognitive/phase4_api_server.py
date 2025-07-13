@@ -103,6 +103,9 @@ class CognitiveAPIServer:
         self.mesh_manager = DynamicMesh()
         self.atomspace = AtomSpace()
         
+        # Create some default agents for task assignment
+        self._create_default_mesh_agents()
+        
         # Task and binding management
         self.active_tasks: Dict[str, CognitiveTask] = {}
         self.embodiment_bindings: Dict[str, EmbodimentBinding] = {}
@@ -132,6 +135,29 @@ class CognitiveAPIServer:
         self._start_background_services()
         
         logger.info("Cognitive API Server initialized successfully")
+    
+    def _create_default_mesh_agents(self):
+        """Create default agents in the mesh for task assignment"""
+        from mesh_topology import DistributedAgent, AgentRole
+        
+        # Create a set of default agents with different roles
+        default_agents = [
+            ("default_coordinator", AgentRole.COORDINATOR),
+            ("default_processor_1", AgentRole.PROCESSOR),
+            ("default_processor_2", AgentRole.PROCESSOR),
+            ("default_attention", AgentRole.ATTENTION),
+            ("default_memory", AgentRole.MEMORY),
+            ("default_inference", AgentRole.INFERENCE)
+        ]
+        
+        for agent_id, role in default_agents:
+            agent = DistributedAgent(agent_id, role)
+            if self.mesh_manager.add_agent(agent):
+                logger.info(f"Created default mesh agent {agent_id} with role {role}")
+            else:
+                logger.warning(f"Failed to create default agent {agent_id}")
+        
+        logger.info(f"Mesh initialized with {len(self.mesh_manager.agents)} agents")
     
     def _setup_routes(self):
         """Setup REST API routes"""
@@ -515,22 +541,92 @@ class CognitiveAPIServer:
     def _setup_unity3d_binding(self, binding: EmbodimentBinding):
         """Setup Unity3D integration"""
         logger.info(f"Setting up Unity3D binding to {binding.endpoint}")
-        # Unity3D specific initialization would go here
-        # For now, just mark as active
+        
+        # Create and register Unity3D agents in the mesh
+        from mesh_topology import DistributedAgent, AgentRole
+        
+        # Create Unity3D agents based on capabilities
+        unity_agent_count = min(len(binding.capabilities), 3)  # Limit to 3 agents per binding
+        for i in range(unity_agent_count):
+            # Determine role based on capability
+            if 'movement' in binding.capabilities:
+                role = AgentRole.PROCESSOR
+            elif 'vision' in binding.capabilities:
+                role = AgentRole.ATTENTION
+            else:
+                role = AgentRole.PROCESSOR
+                
+            agent_id = f"unity3d_{binding.binding_id}_{i}"
+            agent = DistributedAgent(agent_id, role)
+            
+            # Add to mesh
+            if self.mesh_manager.add_agent(agent):
+                logger.info(f"Registered Unity3D agent {agent_id} with role {role}")
+            else:
+                logger.warning(f"Failed to register Unity3D agent {agent_id}")
+        
         binding.status = "active"
     
     def _setup_ros_binding(self, binding: EmbodimentBinding):
         """Setup ROS integration"""
         logger.info(f"Setting up ROS binding to {binding.endpoint}")
-        # ROS specific initialization would go here
-        # For now, just mark as active
+        
+        # Create and register ROS agents in the mesh
+        from mesh_topology import DistributedAgent, AgentRole
+        
+        # Create ROS agents based on capabilities
+        ros_agent_count = min(len(binding.capabilities), 3)  # Limit to 3 agents per binding
+        for i in range(ros_agent_count):
+            # Determine role based on capability
+            if 'navigation' in binding.capabilities:
+                role = AgentRole.COORDINATOR
+            elif 'manipulation' in binding.capabilities:
+                role = AgentRole.PROCESSOR
+            elif 'perception' in binding.capabilities:
+                role = AgentRole.ATTENTION
+            else:
+                role = AgentRole.INFERENCE
+                
+            agent_id = f"ros_{binding.binding_id}_{i}"
+            agent = DistributedAgent(agent_id, role)
+            
+            # Add to mesh
+            if self.mesh_manager.add_agent(agent):
+                logger.info(f"Registered ROS agent {agent_id} with role {role}")
+            else:
+                logger.warning(f"Failed to register ROS agent {agent_id}")
+        
         binding.status = "active"
     
     def _setup_web_binding(self, binding: EmbodimentBinding):
         """Setup web agent integration"""
         logger.info(f"Setting up web binding to {binding.endpoint}")
-        # Web agent specific initialization would go here
-        # For now, just mark as active
+        
+        # Create and register web agents in the mesh
+        from mesh_topology import DistributedAgent, AgentRole
+        
+        # Create web agents based on capabilities
+        web_agent_count = min(len(binding.capabilities), 2)  # Limit to 2 agents per binding
+        for i in range(web_agent_count):
+            # Determine role based on capability
+            if 'visualization' in binding.capabilities:
+                role = AgentRole.MEMORY
+            elif 'data_processing' in binding.capabilities:
+                role = AgentRole.PROCESSOR
+            elif 'user_interaction' in binding.capabilities:
+                role = AgentRole.COORDINATOR
+            else:
+                role = AgentRole.INFERENCE
+                
+            agent_id = f"web_{binding.binding_id}_{i}"
+            agent = DistributedAgent(agent_id, role)
+            
+            # Add to mesh
+            if self.mesh_manager.add_agent(agent):
+                logger.info(f"Registered web agent {agent_id} with role {role}")
+            else:
+                logger.warning(f"Failed to register web agent {agent_id}")
+        
         binding.status = "active"
     
     def _propagate_cognitive_state(self, state_update: Dict[str, Any], 
