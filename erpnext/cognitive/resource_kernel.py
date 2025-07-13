@@ -1,27 +1,31 @@
 """
-Resource Kernel for Dynamic ECAN Attention Allocation
+Resource Kernel for Dynamic ECAN Attention Allocation & Distributed Cognitive Mesh
 
 Implements resource management, allocation scheduling, and distributed
 cognitive mesh integration for Phase 2 of the cognitive architecture.
+This includes both local resource kernels and distributed resource management.
 """
 
 import numpy as np
-from typing import Dict, List, Tuple, Any, Optional, Set
-from dataclasses import dataclass, field
-from enum import Enum
 import time
-import threading
+from typing import Dict, List, Tuple, Any, Optional, Set
+from dataclasses import dataclass, field, asdict
+from enum import Enum
 from collections import defaultdict, deque
+import threading
+from concurrent.futures import ThreadPoolExecutor
 import json
 
 
 class ResourceType(Enum):
     """Types of cognitive resources"""
-    ATTENTION = "attention"
+    COMPUTE = "compute"
     MEMORY = "memory"
-    COMPUTATION = "computation"
+    ATTENTION = "attention"
     BANDWIDTH = "bandwidth"
+    STORAGE = "storage"
     INFERENCE = "inference"
+    COMPUTATION = "computation"  # Alias for backwards compatibility
 
 
 class ResourcePriority(Enum):
@@ -31,6 +35,15 @@ class ResourcePriority(Enum):
     NORMAL = 3
     LOW = 4
     BACKGROUND = 5
+
+
+class AllocationStrategy(Enum):
+    """Resource allocation strategies"""
+    FAIR_SHARE = "fair_share"
+    PRIORITY_BASED = "priority_based"
+    LOAD_BALANCED = "load_balanced"
+    PREDICTIVE = "predictive"
+    MARKET_BASED = "market_based"
 
 
 @dataclass
@@ -49,99 +62,174 @@ class ResourceQuota:
 
 @dataclass
 class ResourceRequest:
-    """Resource allocation request"""
+    """Request for resource allocation"""
     request_id: str
     requester_id: str
     resource_type: ResourceType
     amount: float
-    priority: ResourcePriority
-    duration_estimate: float
+    priority: int
+    deadline: float  # Unix timestamp
+    duration_estimate: float = 0.0
     timestamp: float = field(default_factory=time.time)
-    deadline: Optional[float] = None
+    metadata: Dict[str, Any] = None
+    
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = {}
     
     def is_expired(self) -> bool:
         """Check if request has expired"""
-        if self.deadline is None:
-            return False
         return time.time() > self.deadline
 
 
 @dataclass
 class ResourceAllocation:
-    """Active resource allocation"""
+    """Allocated resource record"""
     allocation_id: str
-    request: ResourceRequest
-    allocated_amount: float
-    start_time: float
-    estimated_end_time: float
+    request_id: str
+    resource_type: ResourceType
+    amount: float
+    allocated_at: float
+    expires_at: float
+    provider_id: str
+    consumer_id: str
+    cost: float = 0.0
     actual_usage: float = 0.0
     
     @property
     def is_expired(self) -> bool:
         """Check if allocation has expired"""
-        return time.time() > self.estimated_end_time
+        return time.time() > self.expires_at
+
+
+@dataclass
+class ResourcePool:
+    """Pool of available resources"""
+    resource_type: ResourceType
+    total_capacity: float
+    available_capacity: float
+    allocated_amount: float
+    reservations: Dict[str, float] = None
+    quality_metrics: Dict[str, float] = None
+    
+    def __post_init__(self):
+        if self.reservations is None:
+            self.reservations = {}
+        if self.quality_metrics is None:
+            self.quality_metrics = {
+                "latency": 0.0,
+                "throughput": 1.0,
+                "reliability": 1.0
+            }
 
 
 class ResourceKernel:
     """
-    Dynamic resource allocation kernel for cognitive mesh
+    Core resource management kernel for distributed cognitive agents
     """
     
-    def __init__(self, node_id: str = "local_node"):
-        self.node_id = node_id
+    def __init__(self, agent_id: str = "local_node", strategy: AllocationStrategy = AllocationStrategy.LOAD_BALANCED):
+        self.agent_id = agent_id
+        self.node_id = agent_id  # Alias for backwards compatibility
+        self.strategy = strategy
+        self.resource_pools: Dict[ResourceType, ResourcePool] = {}
         self.quotas: Dict[ResourceType, ResourceQuota] = {}
-        self.pending_requests: deque = deque()
         self.active_allocations: Dict[str, ResourceAllocation] = {}
+        self.pending_requests: List[ResourceRequest] = []
         self.allocation_history: List[ResourceAllocation] = []
+        self.performance_metrics: Dict[str, float] = defaultdict(float)
         self.mesh_nodes: Dict[str, Dict[str, Any]] = {}
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         
         # Performance metrics
         self.metrics = {
-            "total_requests": 0,
-            "successful_allocations": 0,
-            "failed_allocations": 0,
-            "average_response_time": 0.0,
-            "resource_utilization": defaultdict(float)
+            "requests_processed": 0,
+            "allocations_made": 0,
+            "total_resource_time": 0.0,
+            "average_response_time": 0.0
         }
         
-        # Initialize default quotas
-        self._initialize_default_quotas()
+        # Initialize default resource pools and quotas
+        self._initialize_resource_pools()
+        self._initialize_quotas()
         
-    def _initialize_default_quotas(self):
-        """Initialize default resource quotas"""
-        default_quotas = {
-            ResourceType.ATTENTION: 100.0,
-            ResourceType.MEMORY: 1000.0,
-            ResourceType.COMPUTATION: 500.0,
-            ResourceType.BANDWIDTH: 200.0,
-            ResourceType.INFERENCE: 150.0
+    def _initialize_resource_pools(self):
+        """Initialize default resource pools"""
+        default_pools = {
+            ResourceType.COMPUTE: ResourcePool(
+                resource_type=ResourceType.COMPUTE,
+                total_capacity=100.0,
+                available_capacity=100.0,
+                allocated_amount=0.0
+            ),
+            ResourceType.MEMORY: ResourcePool(
+                resource_type=ResourceType.MEMORY,
+                total_capacity=1000.0,  # MB
+                available_capacity=1000.0,
+                allocated_amount=0.0
+            ),
+            ResourceType.ATTENTION: ResourcePool(
+                resource_type=ResourceType.ATTENTION,
+                total_capacity=10.0,
+                available_capacity=10.0,
+                allocated_amount=0.0
+            ),
+            ResourceType.BANDWIDTH: ResourcePool(
+                resource_type=ResourceType.BANDWIDTH,
+                total_capacity=100.0,  # Mbps
+                available_capacity=100.0,
+                allocated_amount=0.0
+            ),
+            ResourceType.STORAGE: ResourcePool(
+                resource_type=ResourceType.STORAGE,
+                total_capacity=5000.0,  # MB
+                available_capacity=5000.0,
+                allocated_amount=0.0
+            ),
+            ResourceType.INFERENCE: ResourcePool(
+                resource_type=ResourceType.INFERENCE,
+                total_capacity=50.0,
+                available_capacity=50.0,
+                allocated_amount=0.0
+            )
         }
         
-        for resource_type, max_alloc in default_quotas.items():
+        self.resource_pools.update(default_pools)
+    
+    def _initialize_quotas(self):
+        """Initialize resource quotas"""
+        for resource_type, pool in self.resource_pools.items():
             self.quotas[resource_type] = ResourceQuota(
                 resource_type=resource_type,
-                max_allocation=max_alloc
+                max_allocation=pool.total_capacity,
+                current_usage=0.0,
+                reserved=0.0
             )
-    
-    def request_resource(self, requester_id: str, resource_type: ResourceType,
-                        amount: float, priority: ResourcePriority = ResourcePriority.NORMAL,
-                        duration: float = 60.0, deadline: Optional[float] = None) -> str:
+        
+    def request_resource(self, resource_type: ResourceType, amount: float, 
+                        priority: int = 1, deadline: float = None,
+                        requester_id: str = None, duration_estimate: float = 0.0) -> str:
         """
         Request resource allocation
         
         Args:
-            requester_id: ID of the requesting entity
-            resource_type: Type of resource needed
-            amount: Amount of resource requested
-            priority: Priority of the request
-            duration: Estimated duration of usage
-            deadline: Optional deadline for the request
+            resource_type: Type of resource to request
+            amount: Amount of resource needed
+            priority: Request priority (1-10, higher = more urgent)
+            deadline: Request deadline (Unix timestamp)
+            requester_id: ID of the requesting agent
+            duration_estimate: Estimated duration of resource usage
             
         Returns:
             Request ID
         """
-        request_id = f"{requester_id}_{resource_type.value}_{int(time.time() * 1000)}"
+        if deadline is None:
+            deadline = time.time() + 3600  # Default 1 hour deadline
+            
+        if requester_id is None:
+            requester_id = self.agent_id
+            
+        request_id = f"req_{int(time.time() * 1000000)}"
         
         request = ResourceRequest(
             request_id=request_id,
@@ -149,431 +237,704 @@ class ResourceKernel:
             resource_type=resource_type,
             amount=amount,
             priority=priority,
-            duration_estimate=duration,
-            deadline=deadline
+            deadline=deadline,
+            duration_estimate=duration_estimate
         )
         
         with self.lock:
             self.pending_requests.append(request)
-            self.metrics["total_requests"] += 1
+            self.metrics["requests_processed"] += 1
             
+        # Try immediate allocation
+        allocation_id = self._try_allocate_request(request)
+        
         return request_id
-    
-    def process_resource_requests(self) -> List[str]:
-        """
-        Process pending resource requests and allocate resources
         
+    def _try_allocate_request(self, request: ResourceRequest) -> Optional[str]:
+        """
+        Try to allocate resources for a request
+        
+        Args:
+            request: Resource request to allocate
+            
         Returns:
-            List of allocated request IDs
+            Allocation ID if successful, None otherwise
         """
-        allocated_requests = []
-        
         with self.lock:
-            # Clean up expired requests
-            self.pending_requests = deque([req for req in self.pending_requests 
-                                         if not req.is_expired()])
+            resource_pool = self.resource_pools.get(request.resource_type)
+            quota = self.quotas.get(request.resource_type)
             
-            # Sort requests by priority and timestamp
-            sorted_requests = sorted(self.pending_requests, 
-                                   key=lambda r: (r.priority.value, r.timestamp))
+            if not resource_pool or not quota:
+                return None
+                
+            # Check if enough resources are available
+            if (resource_pool.available_capacity >= request.amount and
+                quota.available >= request.amount):
+                
+                # Create allocation
+                allocation_id = f"alloc_{int(time.time() * 1000000)}"
+                
+                # Calculate expiration time
+                expires_at = request.deadline
+                if request.duration_estimate > 0:
+                    expires_at = min(expires_at, time.time() + request.duration_estimate)
+                
+                allocation = ResourceAllocation(
+                    allocation_id=allocation_id,
+                    request_id=request.request_id,
+                    resource_type=request.resource_type,
+                    amount=request.amount,
+                    allocated_at=time.time(),
+                    expires_at=expires_at,
+                    provider_id=self.agent_id,
+                    consumer_id=request.requester_id,
+                    cost=self._calculate_resource_cost(request)
+                )
+                
+                # Update resource pool and quota
+                resource_pool.available_capacity -= request.amount
+                resource_pool.allocated_amount += request.amount
+                quota.current_usage += request.amount
+                
+                # Record allocation
+                self.active_allocations[allocation_id] = allocation
+                self.allocation_history.append(allocation)
+                
+                # Remove from pending requests
+                self.pending_requests = [r for r in self.pending_requests 
+                                       if r.request_id != request.request_id]
+                
+                # Update performance metrics
+                self.performance_metrics["successful_allocations"] += 1
+                self.metrics["allocations_made"] += 1
+                
+                return allocation_id
+                
+        return None
+        
+    def _calculate_resource_cost(self, request: ResourceRequest) -> float:
+        """
+        Calculate cost for resource allocation
+        
+        Args:
+            request: Resource request
             
-            requests_to_remove = []
+        Returns:
+            Cost of the allocation
+        """
+        base_cost = request.amount * 0.1  # Base cost per unit
+        
+        # Priority multiplier
+        priority_multiplier = 1.0 + (request.priority - 1) * 0.1
+        
+        # Urgency multiplier (closer to deadline = higher cost)
+        time_remaining = max(0, request.deadline - time.time())
+        urgency_multiplier = 1.0 + max(0, (3600 - time_remaining) / 3600)
+        
+        # Scarcity multiplier (less available = higher cost)
+        resource_pool = self.resource_pools.get(request.resource_type)
+        if resource_pool:
+            scarcity = 1.0 - (resource_pool.available_capacity / resource_pool.total_capacity)
+            scarcity_multiplier = 1.0 + scarcity
+        else:
+            scarcity_multiplier = 1.0
             
-            for request in sorted_requests:
-                if self._can_allocate(request):
-                    allocation_id = self._allocate_resource(request)
-                    if allocation_id:
-                        allocated_requests.append(request.request_id)
-                        requests_to_remove.append(request)
-                        self.metrics["successful_allocations"] += 1
-                    else:
-                        self.metrics["failed_allocations"] += 1
-            
-            # Remove processed requests
-            for request in requests_to_remove:
-                if request in self.pending_requests:
-                    self.pending_requests.remove(request)
+        total_cost = base_cost * priority_multiplier * urgency_multiplier * scarcity_multiplier
+        return total_cost
         
-        return allocated_requests
-    
-    def _can_allocate(self, request: ResourceRequest) -> bool:
-        """Check if resource can be allocated"""
-        quota = self.quotas.get(request.resource_type)
-        if not quota:
-            return False
-        
-        return quota.available >= request.amount
-    
-    def _allocate_resource(self, request: ResourceRequest) -> Optional[str]:
-        """Allocate resource for a request"""
-        quota = self.quotas.get(request.resource_type)
-        if not quota or quota.available < request.amount:
-            return None
-        
-        allocation_id = f"alloc_{request.request_id}"
-        current_time = time.time()
-        
-        allocation = ResourceAllocation(
-            allocation_id=allocation_id,
-            request=request,
-            allocated_amount=request.amount,
-            start_time=current_time,
-            estimated_end_time=current_time + request.duration_estimate
-        )
-        
-        # Update quota usage
-        quota.current_usage += request.amount
-        
-        # Store allocation
-        self.active_allocations[allocation_id] = allocation
-        
-        return allocation_id
-    
     def release_resource(self, allocation_id: str) -> bool:
         """
         Release allocated resource
         
         Args:
-            allocation_id: ID of the allocation to release
+            allocation_id: ID of allocation to release
             
         Returns:
-            True if successfully released
+            True if resource was released successfully
         """
         with self.lock:
-            allocation = self.active_allocations.get(allocation_id)
-            if not allocation:
+            if allocation_id not in self.active_allocations:
                 return False
+                
+            allocation = self.active_allocations[allocation_id]
+            resource_pool = self.resource_pools.get(allocation.resource_type)
+            quota = self.quotas.get(allocation.resource_type)
             
-            # Update quota
-            quota = self.quotas.get(allocation.request.resource_type)
-            if quota:
-                quota.current_usage -= allocation.allocated_amount
-                quota.current_usage = max(0.0, quota.current_usage)
-            
-            # Move to history
-            self.allocation_history.append(allocation)
-            del self.active_allocations[allocation_id]
-            
-            return True
-    
-    def cleanup_expired_allocations(self) -> List[str]:
+            if resource_pool and quota:
+                # Return resources to pool
+                resource_pool.available_capacity += allocation.amount
+                resource_pool.allocated_amount -= allocation.amount
+                quota.current_usage -= allocation.amount
+                
+                # Remove allocation
+                del self.active_allocations[allocation_id]
+                
+                # Update performance metrics
+                self.performance_metrics["releases"] += 1
+                
+                return True
+                
+        return False
+        
+    def process_pending_requests(self) -> int:
         """
-        Clean up expired allocations
+        Process pending resource requests
         
         Returns:
-            List of cleaned up allocation IDs
+            Number of requests processed
         """
-        cleaned_allocations = []
+        processed_count = 0
         
         with self.lock:
-            expired_allocations = [alloc_id for alloc_id, alloc 
-                                 in self.active_allocations.items() 
-                                 if alloc.is_expired]
+            # Sort requests by priority and deadline
+            if self.strategy == AllocationStrategy.PRIORITY_BASED:
+                self.pending_requests.sort(key=lambda r: (-r.priority, r.deadline))
+            elif self.strategy == AllocationStrategy.FAIR_SHARE:
+                # Simple round-robin for fair share
+                pass
+            elif self.strategy == AllocationStrategy.LOAD_BALANCED:
+                # Sort by amount to balance load
+                self.pending_requests.sort(key=lambda r: r.amount)
+                
+            # Try to allocate each pending request
+            requests_to_process = list(self.pending_requests)
             
-            for alloc_id in expired_allocations:
-                if self.release_resource(alloc_id):
-                    cleaned_allocations.append(alloc_id)
+        for request in requests_to_process:
+            # Check if deadline has passed
+            if request.is_expired():
+                with self.lock:
+                    self.pending_requests = [r for r in self.pending_requests 
+                                           if r.request_id != request.request_id]
+                self.performance_metrics["expired_requests"] += 1
+                continue
+                
+            # Try to allocate
+            allocation_id = self._try_allocate_request(request)
+            if allocation_id:
+                processed_count += 1
+                
+        return processed_count
         
-        return cleaned_allocations
-    
-    def get_resource_utilization(self) -> Dict[str, float]:
-        """Get current resource utilization"""
+    def cleanup_expired_allocations(self) -> int:
+        """
+        Clean up expired resource allocations
+        
+        Returns:
+            Number of allocations cleaned up
+        """
+        current_time = time.time()
+        expired_allocations = []
+        
+        with self.lock:
+            for allocation_id, allocation in self.active_allocations.items():
+                if allocation.is_expired:
+                    expired_allocations.append(allocation_id)
+                    
+        cleanup_count = 0
+        for allocation_id in expired_allocations:
+            if self.release_resource(allocation_id):
+                cleanup_count += 1
+                
+        return cleanup_count
+        
+    def get_resource_utilization(self) -> Dict[str, Dict[str, float]]:
+        """
+        Get resource utilization statistics
+        
+        Returns:
+            Resource utilization data
+        """
         utilization = {}
         
-        for resource_type, quota in self.quotas.items():
-            if quota.max_allocation > 0:
-                utilization[resource_type.value] = quota.current_usage / quota.max_allocation
-            else:
-                utilization[resource_type.value] = 0.0
-        
-        return utilization
-    
-    def register_mesh_node(self, node_id: str, node_info: Dict[str, Any]) -> None:
-        """
-        Register a mesh node for distributed resource allocation
-        
-        Args:
-            node_id: ID of the mesh node
-            node_info: Information about the node (capabilities, quotas, etc.)
-        """
-        self.mesh_nodes[node_id] = {
-            **node_info,
-            "last_seen": time.time(),
-            "status": "active"
-        }
-    
-    def request_mesh_resources(self, resource_type: ResourceType, 
-                              amount: float) -> Optional[str]:
-        """
-        Request resources from mesh nodes
-        
-        Args:
-            resource_type: Type of resource needed
-            amount: Amount of resource requested
-            
-        Returns:
-            Mesh node ID that can provide the resource, or None
-        """
-        available_nodes = []
-        
-        for node_id, node_info in self.mesh_nodes.items():
-            if node_info.get("status") == "active":
-                node_quotas = node_info.get("quotas", {})
-                node_quota = node_quotas.get(resource_type.value, {})
-                available = node_quota.get("available", 0.0)
+        with self.lock:
+            for resource_type, pool in self.resource_pools.items():
+                utilization[resource_type.value] = {
+                    "total_capacity": pool.total_capacity,
+                    "available_capacity": pool.available_capacity,
+                    "allocated_amount": pool.allocated_amount,
+                    "utilization_rate": pool.allocated_amount / pool.total_capacity,
+                    "availability_rate": pool.available_capacity / pool.total_capacity
+                }
                 
-                if available >= amount:
-                    available_nodes.append((node_id, available))
+        return utilization
         
-        # Sort by available resources (descending)
-        available_nodes.sort(key=lambda x: x[1], reverse=True)
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """
+        Get performance metrics for the resource kernel
         
-        return available_nodes[0][0] if available_nodes else None
-    
-    def update_resource_metrics(self) -> None:
-        """Update resource utilization metrics"""
-        utilization = self.get_resource_utilization()
-        
-        for resource_type, util in utilization.items():
-            self.metrics["resource_utilization"][resource_type] = util
-        
-        # Calculate average response time
-        if self.allocation_history:
-            response_times = []
-            for allocation in self.allocation_history[-100:]:  # Last 100 allocations
-                response_time = allocation.start_time - allocation.request.timestamp
-                response_times.append(response_time)
+        Returns:
+            Performance metrics
+        """
+        with self.lock:
+            metrics = dict(self.performance_metrics)
+            metrics.update(self.metrics)
+            metrics.update({
+                "active_allocations": len(self.active_allocations),
+                "pending_requests": len(self.pending_requests),
+                "total_allocations": len(self.allocation_history),
+                "allocation_success_rate": (
+                    metrics.get("successful_allocations", 0) / 
+                    max(1, metrics.get("successful_allocations", 0) + metrics.get("expired_requests", 0))
+                )
+            })
             
-            self.metrics["average_response_time"] = np.mean(response_times)
-    
-    def get_kernel_stats(self) -> Dict[str, Any]:
-        """Get comprehensive kernel statistics"""
-        self.update_resource_metrics()
+        return metrics
+
+    def register_mesh_node(self, node_id: str, node_info: Dict[str, Any]):
+        """Register a mesh node for distributed operations"""
+        with self.lock:
+            self.mesh_nodes[node_id] = node_info
+            
+    def get_mesh_status(self) -> Dict[str, Any]:
+        """Get status of the mesh network"""
+        with self.lock:
+            return {
+                "local_node": self.node_id,
+                "connected_nodes": len(self.mesh_nodes),
+                "mesh_nodes": dict(self.mesh_nodes)
+            }
         
-        return {
-            "node_id": self.node_id,
-            "metrics": dict(self.metrics),
-            "resource_utilization": self.get_resource_utilization(),
-            "active_allocations": len(self.active_allocations),
-            "pending_requests": len(self.pending_requests),
-            "mesh_nodes": len(self.mesh_nodes),
-            "quotas": {rt.value: {"max": q.max_allocation, "current": q.current_usage, 
-                                "available": q.available} 
-                      for rt, q in self.quotas.items()}
+    def optimize_allocations(self) -> Dict[str, Any]:
+        """
+        Optimize current resource allocations
+        
+        Returns:
+            Optimization results
+        """
+        optimization_results = {
+            "reallocated": 0,
+            "freed_resources": 0.0,
+            "efficiency_gain": 0.0
         }
-    
+        
+        with self.lock:
+            # Find underutilized allocations
+            current_time = time.time()
+            candidates_for_reallocation = []
+            
+            for allocation_id, allocation in self.active_allocations.items():
+                # Check if allocation is near expiry or low priority
+                time_remaining = allocation.expires_at - current_time
+                if time_remaining < 300:  # Less than 5 minutes remaining
+                    candidates_for_reallocation.append(allocation_id)
+                    
+            # Attempt to defragment allocations
+            for allocation_id in candidates_for_reallocation:
+                allocation = self.active_allocations.get(allocation_id)
+                if allocation:
+                    # Check if there are higher priority pending requests
+                    high_priority_requests = [r for r in self.pending_requests 
+                                            if r.priority > 7 and r.resource_type == allocation.resource_type]
+                    
+                    if high_priority_requests:
+                        # Release this allocation to make room
+                        if self.release_resource(allocation_id):
+                            optimization_results["reallocated"] += 1
+                            optimization_results["freed_resources"] += allocation.amount
+                            
+        return optimization_results
+        
     def scheme_resource_spec(self) -> str:
         """
-        Generate Scheme specification for resource allocation
+        Generate Scheme specification for resource management
         
         Returns:
             Scheme specification string
         """
-        spec = f"""
-;; Resource Kernel Specification for {self.node_id}
-(define (resource-request requester resource-type amount priority)
-  (let ((request-id (generate-request-id requester resource-type)))
-    (add-pending-request request-id requester resource-type amount priority)
+        spec = """
+(define (resource-request kernel type amount priority)
+  (let ((request-id (generate-request-id)))
+    (kernel-add-request kernel 
+      (make-request request-id type amount priority (current-time)))
     request-id))
 
-(define (process-resource-requests)
-  (map (lambda (request)
-         (if (can-allocate? request)
-             (allocate-resource request)
-             (queue-request request)))
-       (sort-requests-by-priority (get-pending-requests))))
+(define (resource-allocate kernel request)
+  (let ((pool (kernel-get-pool kernel (request-type request))))
+    (if (>= (pool-available pool) (request-amount request))
+        (let ((allocation-id (generate-allocation-id)))
+          (pool-allocate! pool (request-amount request))
+          (kernel-add-allocation kernel allocation-id request)
+          allocation-id)
+        #f)))
 
-(define (resource-utilization resource-type)
-  (/ (current-usage resource-type) (max-allocation resource-type)))
-
-(define (mesh-resource-request resource-type amount)
-  (find-available-node 
-    (filter (lambda (node) 
-              (>= (node-available-resource node resource-type) amount))
-            mesh-nodes)))
+(define (resource-optimize kernel)
+  (let ((reallocated 0)
+        (freed-resources 0.0))
+    (map (lambda (allocation)
+           (when (allocation-underutilized? allocation)
+             (set! freed-resources (+ freed-resources (allocation-amount allocation)))
+             (resource-release kernel (allocation-id allocation))
+             (set! reallocated (+ reallocated 1))))
+         (kernel-get-allocations kernel))
+    (list reallocated freed-resources)))
 """
         return spec.strip()
 
 
 class AttentionScheduler:
     """
-    Scheduler for optimized attention allocation cycles
+    Attention scheduling system integrated with resource kernel
     """
     
     def __init__(self, resource_kernel: ResourceKernel):
         self.resource_kernel = resource_kernel
-        self.attention_queue: deque = deque()
-        self.active_cycles: Dict[str, Dict[str, Any]] = {}
-        self.cycle_history: List[Dict[str, Any]] = []
+        self.attention_requests: deque = deque()
+        self.active_attention_tasks: Dict[str, Dict[str, Any]] = {}
         self.lock = threading.Lock()
         
-    def schedule_attention_cycle(self, cycle_id: str, atoms: List[str],
-                               focus_strength: float = 1.0,
-                               priority: ResourcePriority = ResourcePriority.NORMAL,
-                               duration: float = 30.0) -> bool:
+    def schedule_attention(self, task_id: str, attention_amount: float,
+                          priority: ResourcePriority = ResourcePriority.NORMAL,
+                          duration: float = 60.0) -> bool:
         """
-        Schedule an attention allocation cycle
+        Schedule attention allocation for a cognitive task
         
         Args:
-            cycle_id: Unique identifier for the cycle
-            atoms: List of atom IDs to focus on
-            focus_strength: Strength of attention focus
-            priority: Priority of the cycle
-            duration: Estimated duration of the cycle
+            task_id: Unique identifier for the task
+            attention_amount: Amount of attention required
+            priority: Priority level for the task
+            duration: Expected duration in seconds
             
         Returns:
-            True if successfully scheduled
+            True if attention was successfully scheduled
         """
-        # Calculate resource requirements
-        attention_needed = len(atoms) * focus_strength * 10.0  # Heuristic
-        computation_needed = len(atoms) * focus_strength * 5.0
-        
-        # Request resources
-        attention_request = self.resource_kernel.request_resource(
-            requester_id=cycle_id,
+        request_id = self.resource_kernel.request_resource(
             resource_type=ResourceType.ATTENTION,
-            amount=attention_needed,
-            priority=priority,
-            duration=duration
+            amount=attention_amount,
+            priority=priority.value,
+            deadline=time.time() + duration,
+            duration_estimate=duration
         )
         
-        computation_request = self.resource_kernel.request_resource(
-            requester_id=cycle_id,
-            resource_type=ResourceType.COMPUTATION,
-            amount=computation_needed,
-            priority=priority,
-            duration=duration
-        )
-        
-        cycle_spec = {
-            "cycle_id": cycle_id,
-            "atoms": atoms,
-            "focus_strength": focus_strength,
-            "priority": priority,
-            "duration": duration,
-            "attention_request": attention_request,
-            "computation_request": computation_request,
-            "timestamp": time.time(),
-            "status": "scheduled"
-        }
-        
-        with self.lock:
-            self.attention_queue.append(cycle_spec)
-        
-        return True
+        if request_id:
+            with self.lock:
+                self.attention_requests.append({
+                    "task_id": task_id,
+                    "request_id": request_id,
+                    "amount": attention_amount,
+                    "priority": priority,
+                    "scheduled_at": time.time()
+                })
+            return True
+            
+        return False
     
-    def process_attention_queue(self) -> List[str]:
-        """
-        Process scheduled attention cycles
-        
-        Returns:
-            List of executed cycle IDs
-        """
-        executed_cycles = []
-        
-        # Process resource requests first
-        allocated_requests = self.resource_kernel.process_resource_requests()
-        
+    def get_attention_status(self) -> Dict[str, Any]:
+        """Get current attention allocation status"""
         with self.lock:
-            cycles_to_execute = []
-            cycles_to_remove = []
-            
-            for cycle_spec in list(self.attention_queue):
-                attention_req = cycle_spec["attention_request"]
-                computation_req = cycle_spec["computation_request"]
-                
-                # Check if both resources are allocated
-                if (attention_req in allocated_requests and 
-                    computation_req in allocated_requests):
-                    cycles_to_execute.append(cycle_spec)
-                    cycles_to_remove.append(cycle_spec)
-            
-            # Remove cycles to be executed
-            for cycle_spec in cycles_to_remove:
-                if cycle_spec in self.attention_queue:
-                    self.attention_queue.remove(cycle_spec)
-            
-            # Execute cycles
-            for cycle_spec in cycles_to_execute:
-                cycle_id = cycle_spec["cycle_id"]
-                cycle_spec["status"] = "executing"
-                cycle_spec["execution_start"] = time.time()
-                
-                self.active_cycles[cycle_id] = cycle_spec
-                executed_cycles.append(cycle_id)
-        
-        return executed_cycles
+            return {
+                "pending_requests": len(self.attention_requests),
+                "active_tasks": len(self.active_attention_tasks),
+                "total_attention_allocated": sum(
+                    alloc.amount for alloc in self.resource_kernel.active_allocations.values()
+                    if alloc.resource_type == ResourceType.ATTENTION
+                )
+            }
+
+
+class DistributedResourceManager:
+    """
+    Manages resources across multiple distributed cognitive agents
+    """
     
-    def complete_attention_cycle(self, cycle_id: str) -> bool:
+    def __init__(self):
+        self.resource_kernels: Dict[str, ResourceKernel] = {}
+        self.global_resource_view: Dict[ResourceType, Dict[str, float]] = defaultdict(lambda: defaultdict(float))
+        self.resource_policies: Dict[str, Any] = {}
+        self.rebalancing_history: List[Dict[str, Any]] = []
+        self.executor = ThreadPoolExecutor(max_workers=8)
+        
+    def register_resource_kernel(self, agent_id: str, kernel: ResourceKernel):
         """
-        Mark attention cycle as complete and release resources
+        Register a resource kernel from an agent
         
         Args:
-            cycle_id: ID of the cycle to complete
+            agent_id: ID of the agent
+            kernel: Resource kernel to register
+        """
+        self.resource_kernels[agent_id] = kernel
+        self._update_global_view()
+        
+    def unregister_resource_kernel(self, agent_id: str):
+        """
+        Unregister a resource kernel
+        
+        Args:
+            agent_id: ID of the agent to unregister
+        """
+        if agent_id in self.resource_kernels:
+            del self.resource_kernels[agent_id]
+            self._update_global_view()
+            
+    def _update_global_view(self):
+        """Update global view of resource availability"""
+        # Reset global view
+        self.global_resource_view.clear()
+        
+        # Aggregate resources from all kernels
+        for agent_id, kernel in self.resource_kernels.items():
+            utilization = kernel.get_resource_utilization()
+            
+            for resource_type_str, stats in utilization.items():
+                resource_type = ResourceType(resource_type_str)
+                self.global_resource_view[resource_type]["total"] += stats["total_capacity"]
+                self.global_resource_view[resource_type]["available"] += stats["available_capacity"]
+                self.global_resource_view[resource_type]["allocated"] += stats["allocated_amount"]
+                
+    def find_best_provider(self, resource_type: ResourceType, amount: float) -> Optional[str]:
+        """
+        Find the best provider for a resource request
+        
+        Args:
+            resource_type: Type of resource needed
+            amount: Amount of resource needed
             
         Returns:
-            True if successfully completed
+            Agent ID of best provider, or None if no suitable provider
         """
-        with self.lock:
-            cycle_spec = self.active_cycles.get(cycle_id)
-            if not cycle_spec:
-                return False
+        best_provider = None
+        best_score = float('-inf')
+        
+        for agent_id, kernel in self.resource_kernels.items():
+            utilization = kernel.get_resource_utilization()
+            resource_stats = utilization.get(resource_type.value)
             
-            # Release resources
-            attention_alloc = f"alloc_{cycle_spec['attention_request']}"
-            computation_alloc = f"alloc_{cycle_spec['computation_request']}"
+            if resource_stats and resource_stats["available_capacity"] >= amount:
+                # Calculate provider score (higher is better)
+                availability_ratio = resource_stats["availability_rate"]
+                capacity_ratio = resource_stats["available_capacity"] / amount
+                
+                # Prefer providers with good availability and excess capacity
+                score = availability_ratio * 0.6 + min(capacity_ratio, 2.0) * 0.4
+                
+                if score > best_score:
+                    best_score = score
+                    best_provider = agent_id
+                    
+        return best_provider
+        
+    def distributed_resource_request(self, requester_id: str, resource_type: ResourceType, 
+                                   amount: float, priority: int = 1) -> Optional[str]:
+        """
+        Handle distributed resource request
+        
+        Args:
+            requester_id: ID of requesting agent
+            resource_type: Type of resource needed
+            amount: Amount of resource needed
+            priority: Request priority
             
-            self.resource_kernel.release_resource(attention_alloc)
-            self.resource_kernel.release_resource(computation_alloc)
+        Returns:
+            Allocation ID if successful, None otherwise
+        """
+        # Find best provider
+        provider_id = self.find_best_provider(resource_type, amount)
+        
+        if provider_id and provider_id in self.resource_kernels:
+            # Make request to provider
+            provider_kernel = self.resource_kernels[provider_id]
+            request_id = provider_kernel.request_resource(
+                resource_type=resource_type,
+                amount=amount,
+                priority=priority,
+                requester_id=requester_id
+            )
             
-            # Mark as completed
-            cycle_spec["status"] = "completed"
-            cycle_spec["completion_time"] = time.time()
+            # Update global view
+            self._update_global_view()
             
-            # Move to history
-            self.cycle_history.append(cycle_spec)
-            del self.active_cycles[cycle_id]
+            return request_id
             
-            return True
-    
-    def get_scheduler_stats(self) -> Dict[str, Any]:
-        """Get scheduler statistics"""
-        return {
-            "queued_cycles": len(self.attention_queue),
-            "active_cycles": len(self.active_cycles),
-            "completed_cycles": len(self.cycle_history),
-            "average_cycle_duration": self._calculate_average_duration(),
-            "resource_efficiency": self._calculate_resource_efficiency()
+        return None
+        
+    def rebalance_resources(self) -> Dict[str, Any]:
+        """
+        Rebalance resources across the distributed mesh
+        
+        Returns:
+            Rebalancing results
+        """
+        rebalancing_results = {
+            "moves": 0,
+            "total_amount_moved": 0.0,
+            "efficiency_improvement": 0.0,
+            "start_time": time.time()
         }
-    
-    def _calculate_average_duration(self) -> float:
-        """Calculate average cycle duration"""
-        if not self.cycle_history:
-            return 0.0
         
-        durations = []
-        for cycle in self.cycle_history[-50:]:  # Last 50 cycles
-            if "execution_start" in cycle and "completion_time" in cycle:
-                duration = cycle["completion_time"] - cycle["execution_start"]
-                durations.append(duration)
+        # Update global view
+        self._update_global_view()
         
-        return np.mean(durations) if durations else 0.0
-    
-    def _calculate_resource_efficiency(self) -> float:
-        """Calculate resource allocation efficiency"""
-        if not self.cycle_history:
-            return 0.0
+        # Find imbalanced resources
+        for resource_type, global_stats in self.global_resource_view.items():
+            if global_stats["total"] == 0:
+                continue
+                
+            global_utilization = global_stats["allocated"] / global_stats["total"]
+            num_agents = len(self.resource_kernels)
+            
+            if num_agents < 2:
+                continue
+                
+            # Find agents with significantly different utilization
+            overloaded_agents = []
+            underloaded_agents = []
+            
+            for agent_id, kernel in self.resource_kernels.items():
+                utilization = kernel.get_resource_utilization()
+                resource_stats = utilization.get(resource_type.value)
+                
+                if resource_stats:
+                    agent_utilization = resource_stats["utilization_rate"]
+                    
+                    if agent_utilization > global_utilization + 0.2:  # 20% above average
+                        overloaded_agents.append((agent_id, agent_utilization, resource_stats))
+                    elif agent_utilization < global_utilization - 0.2:  # 20% below average
+                        underloaded_agents.append((agent_id, agent_utilization, resource_stats))
+                        
+            # Attempt to move resources from overloaded to underloaded agents
+            for overloaded_id, overload_util, overload_stats in overloaded_agents:
+                for underloaded_id, underload_util, underload_stats in underloaded_agents:
+                    # Calculate optimal move amount
+                    excess_capacity = overload_stats["allocated_amount"] - (
+                        overload_stats["total_capacity"] * global_utilization
+                    )
+                    available_capacity = underload_stats["available_capacity"]
+                    
+                    move_amount = min(excess_capacity * 0.5, available_capacity * 0.8)
+                    
+                    if move_amount > 0:
+                        # Simulate resource move (in real implementation, this would involve
+                        # complex negotiation and migration protocols)
+                        rebalancing_results["moves"] += 1
+                        rebalancing_results["total_amount_moved"] += move_amount
+                        
+        rebalancing_results["end_time"] = time.time()
+        rebalancing_results["duration"] = rebalancing_results["end_time"] - rebalancing_results["start_time"]
         
-        total_requested = 0.0
-        total_used = 0.0
+        # Record rebalancing event
+        self.rebalancing_history.append(rebalancing_results)
         
-        for cycle in self.cycle_history[-20:]:  # Last 20 cycles
-            estimated_duration = cycle.get("duration", 0.0)
-            if "execution_start" in cycle and "completion_time" in cycle:
-                actual_duration = cycle["completion_time"] - cycle["execution_start"]
-                total_requested += estimated_duration
-                total_used += actual_duration
+        return rebalancing_results
         
-        if total_requested > 0:
-            return min(total_used / total_requested, 1.0)
-        return 0.0
+    def get_global_resource_stats(self) -> Dict[str, Any]:
+        """
+        Get global resource statistics
+        
+        Returns:
+            Global resource statistics
+        """
+        self._update_global_view()
+        
+        stats = {
+            "total_agents": len(self.resource_kernels),
+            "resource_types": {}
+        }
+        
+        for resource_type, global_stats in self.global_resource_view.items():
+            if global_stats["total"] > 0:
+                stats["resource_types"][resource_type.value] = {
+                    "total_capacity": global_stats["total"],
+                    "total_available": global_stats["available"],
+                    "total_allocated": global_stats["allocated"],
+                    "global_utilization": global_stats["allocated"] / global_stats["total"],
+                    "global_availability": global_stats["available"] / global_stats["total"]
+                }
+                
+        return stats
+        
+    def benchmark_resource_allocation(self, iterations: int = 100) -> Dict[str, Any]:
+        """
+        Benchmark distributed resource allocation performance
+        
+        Args:
+            iterations: Number of benchmark iterations
+            
+        Returns:
+            Benchmark results
+        """
+        if not self.resource_kernels:
+            return {"error": "No resource kernels available"}
+            
+        start_time = time.time()
+        
+        successful_requests = 0
+        failed_requests = 0
+        total_allocation_time = 0.0
+        
+        # Prepare random test data
+        resource_types = [rt for rt in ResourceType if rt != ResourceType.COMPUTATION]  # Exclude alias
+        agent_ids = list(self.resource_kernels.keys())
+        
+        for i in range(iterations):
+            # Random resource request
+            resource_type = np.random.choice(resource_types)
+            requester_id = np.random.choice(agent_ids)
+            amount = np.random.uniform(1.0, 50.0)
+            priority = np.random.randint(1, 11)
+            
+            # Measure allocation time
+            alloc_start = time.time()
+            
+            allocation_id = self.distributed_resource_request(
+                requester_id=requester_id,
+                resource_type=resource_type,
+                amount=amount,
+                priority=priority
+            )
+            
+            alloc_end = time.time()
+            total_allocation_time += (alloc_end - alloc_start)
+            
+            if allocation_id:
+                successful_requests += 1
+            else:
+                failed_requests += 1
+                
+        end_time = time.time()
+        
+        # Calculate metrics
+        total_time = end_time - start_time
+        avg_allocation_time = total_allocation_time / iterations if iterations > 0 else 0
+        success_rate = successful_requests / iterations if iterations > 0 else 0
+        requests_per_second = iterations / total_time if total_time > 0 else 0
+        
+        return {
+            "total_time": total_time,
+            "iterations": iterations,
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+            "success_rate": success_rate,
+            "avg_allocation_time": avg_allocation_time,
+            "requests_per_second": requests_per_second,
+            "total_agents": len(self.resource_kernels),
+            "global_stats": self.get_global_resource_stats()
+        }
+        
+    def scheme_distributed_spec(self) -> str:
+        """
+        Generate Scheme specification for distributed resource management
+        
+        Returns:
+            Scheme specification string
+        """
+        spec = """
+(define (distributed-resource-find-provider managers type amount)
+  (let ((best-provider #f)
+        (best-score 0))
+    (map (lambda (manager)
+           (let ((score (manager-provider-score manager type amount)))
+             (when (> score best-score)
+               (set! best-score score)
+               (set! best-provider manager))))
+         managers)
+    best-provider))
+
+(define (resource-rebalance managers)
+  (let ((moves 0))
+    (map (lambda (type)
+           (let ((overloaded (filter-overloaded managers type))
+                 (underloaded (filter-underloaded managers type)))
+             (set! moves (+ moves (rebalance-between overloaded underloaded)))))
+         (list 'compute 'memory 'attention 'bandwidth 'storage))
+    moves))
+"""
+        return spec.strip()
