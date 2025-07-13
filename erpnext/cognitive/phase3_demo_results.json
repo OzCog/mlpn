@@ -1,0 +1,138 @@
+{
+  "conceptual_embedding": {
+    "input_shapes": [
+      [
+        256
+      ],
+      [
+        128
+      ]
+    ],
+    "output_shape": [
+      256
+    ],
+    "execution_time": 9.369850158691406e-05
+  },
+  "synthesis_scenarios": [
+    {
+      "scenario": "High Confidence Reasoning",
+      "execution_time": 0.00033926963806152344,
+      "output_shape": [
+        512
+      ],
+      "synthesis_type": "conceptual_embedding"
+    },
+    {
+      "scenario": "Uncertain Knowledge",
+      "execution_time": 0.0002765655517578125,
+      "output_shape": [
+        512
+      ],
+      "synthesis_type": "conceptual_embedding"
+    },
+    {
+      "scenario": "Logical Modus Ponens",
+      "execution_time": 0.0002269744873046875,
+      "output_shape": [
+        128
+      ],
+      "synthesis_type": "logical_inference"
+    }
+  ],
+  "benchmarking": {
+    "registry_performance": {
+      "total_operations": 12,
+      "execution_time": {
+        "mean": 0.011830013641669268,
+        "median": 0.0009448187749967474,
+        "std": 0.027795601924494075,
+        "min": 9.271300001501004e-06,
+        "max": 0.0971850588000052
+      },
+      "throughput": {
+        "mean": 28596.11767735858,
+        "median": 6860.331657761916,
+        "total": 343153.41212830297
+      },
+      "memory_usage": {
+        "mean": 214311,
+        "total": 2571732,
+        "max": 876800
+      }
+    },
+    "synthesizer_benchmarks": {
+      "conceptual_embedding": {
+        "avg_execution_time": 9.260972340901693e-05,
+        "total_time": 0.002778291702270508,
+        "operations_per_second": 10798.002231185103,
+        "memory_requirement": 524288,
+        "complexity": "O(d\u00b2)"
+      },
+      "logical_inference": {
+        "avg_execution_time": 1.4567375183105469e-05,
+        "total_time": 0.00043702125549316406,
+        "operations_per_second": 68646.54664484452,
+        "memory_requirement": 65536,
+        "complexity": "O(d\u00b2)"
+      },
+      "attention_allocation": {
+        "avg_execution_time": 0.003978713353474935,
+        "total_time": 0.11936140060424805,
+        "operations_per_second": 251.33753330749963,
+        "memory_requirement": 2097152,
+        "complexity": "O(n\u00b2d)"
+      },
+      "hypergraph_convolution": {
+        "avg_execution_time": 0.025060598055521646,
+        "total_time": 0.7518179416656494,
+        "operations_per_second": 39.90327755883975,
+        "memory_requirement": 2560000,
+        "complexity": "O(n\u00b2d)"
+      }
+    },
+    "total_throughput": 79735.78968689597
+  },
+  "mesh_integration": {
+    "nodes": 4,
+    "distributed_performance": {
+      "throughput": 31607.26081592629,
+      "execution_time": 3.1638300004033224e-05
+    },
+    "scalability": {
+      "1": {
+        "throughput": 120983.3531638577,
+        "execution_time": 8.265599967671733e-06
+      },
+      "2": {
+        "throughput": 83651.20778397335,
+        "execution_time": 1.1954400019931199e-05
+      },
+      "4": {
+        "throughput": 28887.874595218767,
+        "execution_time": 3.461660000994016e-05
+      },
+      "8": {
+        "throughput": 34138.5478885207,
+        "execution_time": 2.929239999502897e-05
+      }
+    }
+  },
+  "phase_integration": {
+    "atomspace_concepts": 3,
+    "ecan_attention": {
+      "atoms_processed": 5,
+      "attention_values": [
+        1.2000000476837158,
+        1.2000000476837158,
+        1.5,
+        1.0,
+        0.4000000059604645
+      ],
+      "output_shape": [
+        5,
+        256
+      ]
+    },
+    "resource_coordination": 4
+  }
+}
