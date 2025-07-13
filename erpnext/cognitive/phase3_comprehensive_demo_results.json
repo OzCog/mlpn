@@ -1,6 +1,6 @@
 {
   "phase": "Phase 3: Neural-Symbolic Synthesis via Custom ggml Kernels",
-  "timestamp": 1752431930.05097,
+  "timestamp": 1752432852.3866277,
   "implementation_status": "COMPLETE",
   "acceptance_criteria": {
     "real_data_implementation": true,
@@ -23,9 +23,9 @@
         "output_shape": [
           512
         ],
-        "execution_time": 0.00016880035400390625,
-        "output_mean": 0.051881629333873115,
-        "output_std": 0.5338013768260519
+        "execution_time": 0.0001850128173828125,
+        "output_mean": -0.003205475781489671,
+        "output_std": 0.5482129827793356
       },
       "logical_inference": {
         "input_shapes": [
@@ -42,7 +42,7 @@
         "output_shape": [
           128
         ],
-        "execution_time": 2.9087066650390625e-05,
+        "execution_time": 3.0279159545898438e-05,
         "operation_type": "AND"
       },
       "attention_allocation": {
@@ -62,7 +62,7 @@
           10,
           256
         ],
-        "execution_time": 0.0010077953338623047,
+        "execution_time": 0.001003265380859375,
         "num_heads": 8
       },
       "hypergraph_convolution": {
@@ -84,7 +84,7 @@
           20,
           256
         ],
-        "execution_time": 0.0021543502807617188,
+        "execution_time": 0.002130746841430664,
         "num_nodes": 20
       }
     },
@@ -101,12 +101,12 @@
         "output_shape": [
           512
         ],
-        "execution_time": 0.00043272972106933594,
+        "execution_time": 0.00046443939208984375,
         "output_stats": {
-          "mean": -0.00016101506552616005,
-          "std": 0.3194946415132815,
-          "min": -1.2961130085620316,
-          "max": 1.2856500652586458
+          "mean": 0.01606418925095854,
+          "std": 0.3480266805370689,
+          "min": -1.3741579103152366,
+          "max": 1.3552962481510813
         }
       },
       "logical_inference": {
@@ -121,12 +121,12 @@
         "output_shape": [
           128
         ],
-        "execution_time": 0.00030517578125,
+        "execution_time": 0.00032806396484375,
         "output_stats": {
-          "mean": -0.0026664754813451553,
-          "std": 0.21141339316979324,
-          "min": -0.650843832810683,
-          "max": 0.6006812200075352
+          "mean": 0.017394974599487946,
+          "std": 0.1828163775892507,
+          "min": -0.4743005788260483,
+          "max": 0.7846555205223209
         }
       },
       "attention_allocation": {
@@ -142,12 +142,12 @@
           1,
           256
         ],
-        "execution_time": 0.0006444454193115234,
+        "execution_time": 0.0006721019744873047,
         "output_stats": {
-          "mean": 0.22460573309957826,
-          "std": 2.4850998556172863,
-          "min": -6.739341853203992,
-          "max": 6.555196777408075
+          "mean": 0.3805163507319042,
+          "std": 2.815558403715555,
+          "min": -6.203332093234304,
+          "max": 7.966531333659931
         }
       }
     },
@@ -171,7 +171,7 @@
       },
       "performance_metrics": {
         "conceptual_embedding_0": {
-          "execution_time": 0.0004246234893798828,
+          "execution_time": 0.0004565715789794922,
           "input_shapes": [
             [
               256
@@ -186,7 +186,7 @@
           "memory_used": 4096
         },
         "logical_inference_1": {
-          "execution_time": 0.00029778480529785156,
+          "execution_time": 0.0003211498260498047,
           "input_shapes": [
             [
               128
@@ -204,7 +204,7 @@
           "memory_used": 1024
         },
         "attention_allocation_2": {
-          "execution_time": 0.0006382465362548828,
+          "execution_time": 0.0006656646728515625,
           "input_shapes": [
             [
               1,
@@ -224,21 +224,21 @@
           "memory_used": 2048
         }
       },
-      "average_execution_time": 0.0004535516103108724
+      "average_execution_time": 0.0004811286926269531
     },
     "tensor_benchmarking": {
       "total_operations": 12,
       "execution_time": {
-        "mean": 0.04231210503333784,
-        "median": 0.0009455341000034423,
-        "std": 0.12157822847458466,
-        "min": 9.637800008022169e-06,
-        "max": 0.4258583713500002
+        "mean": 0.04176637834166712,
+        "median": 0.0009402722000089624,
+        "std": 0.11978739818656407,
+        "min": 9.295850003354644e-06,
+        "max": 0.4196128383499797
       },
       "throughput": {
-        "mean": 23363.04089601506,
-        "median": 5705.217168126172,
-        "total": 280356.4907521807
+        "mean": 24029.58288147851,
+        "median": 5828.640628748599,
+        "total": 288354.9945777421
       },
       "memory_usage": {
         "mean": 450811,
@@ -282,47 +282,47 @@
     "performance_characteristics": {
       "128D": {
         "complexity": 128,
-        "avg_execution_time": 0.0003515005111694336,
-        "throughput": 2844.9460761039136,
+        "avg_execution_time": 0.0003365516662597656,
+        "throughput": 2971.3119863984134,
         "output_shape": [
           512
         ],
-        "scalability_factor": 2844.9460761039136
+        "scalability_factor": 2971.3119863984134
       },
       "256D": {
         "complexity": 256,
-        "avg_execution_time": 0.00032303333282470705,
-        "throughput": 3095.6557679533544,
+        "avg_execution_time": 0.000331568717956543,
+        "throughput": 3015.966060257424,
         "output_shape": [
           512
         ],
-        "scalability_factor": 1547.8278839766772
+        "scalability_factor": 1507.983030128712
       },
       "512D": {
         "complexity": 512,
-        "avg_execution_time": 0.00032367706298828123,
-        "throughput": 3089.4991160872128,
+        "avg_execution_time": 0.0003277778625488281,
+        "throughput": 3050.846668606343,
         "output_shape": [
           512
         ],
-        "scalability_factor": 772.3747790218032
+        "scalability_factor": 762.7116671515857
       },
       "1024D": {
         "complexity": 1024,
-        "avg_execution_time": 0.00032639503479003906,
-        "throughput": 3063.772096420745,
+        "avg_execution_time": 0.00032846927642822267,
+        "throughput": 3044.4247659142047,
         "output_shape": [
           512
         ],
-        "scalability_factor": 382.97151205259314
+        "scalability_factor": 380.5530957392756
       }
     }
   },
   "overall_metrics": {
     "total_kernel_types": 4,
     "total_operations_tested": 4,
-    "total_execution_time": 0.0033600330352783203,
-    "overall_throughput": 1190.4644859149932,
+    "total_execution_time": 0.00334930419921875,
+    "overall_throughput": 1194.2779043280182,
     "success_rate": 100.0
   }
 }

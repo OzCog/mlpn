@@ -1,14 +1,14 @@
 {
-  "suite_name": "kernel_registry_benchmark_1752431914",
-  "timestamp": 1752431929.9832466,
+  "suite_name": "kernel_registry_benchmark_1752432837",
+  "timestamp": 1752432852.3198378,
   "system_info": {
     "platform": "Linux-6.11.0-1018-azure-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python_version": "3.12.3",
     "numpy_version": "2.3.1",
     "cpu_count": 4,
-    "memory_total": 16772579328,
-    "memory_available": 15309283328
+    "memory_total": 16772575232,
+    "memory_available": 15273918464
   },
   "results": [
     {
@@ -24,12 +24,12 @@
       "output_shape": [
         512
       ],
-      "execution_time": 9.117244999288233e-05,
+      "execution_time": 8.99373999970976e-05,
       "memory_usage": 7168,
-      "throughput": 10968.225599707679,
+      "throughput": 11118.844885801362,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 5.315158771816577e-06,
+        "execution_time_std": 3.5019575138482125e-06,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -47,12 +47,12 @@
       "output_shape": [
         512
       ],
-      "execution_time": 9.008550000544346e-05,
+      "execution_time": 9.010015000967541e-05,
       "memory_usage": 7168,
-      "throughput": 11100.565573145228,
+      "throughput": 11098.760655699407,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 4.851833438055214e-06,
+        "execution_time_std": 4.5768916236774374e-06,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -70,12 +70,12 @@
       "output_shape": [
         512
       ],
-      "execution_time": 9.21272499965653e-05,
+      "execution_time": 8.991149998678338e-05,
       "memory_usage": 7168,
-      "throughput": 10854.55172098681,
+      "throughput": 11122.047793074255,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 6.202841554494742e-06,
+        "execution_time_std": 4.709264872273892e-06,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -96,12 +96,12 @@
       "output_shape": [
         128
       ],
-      "execution_time": 1.3964999982363225e-05,
+      "execution_time": 1.3534649986013391e-05,
       "memory_usage": 2052,
-      "throughput": 71607.59049501804,
+      "throughput": 73884.4374278901,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 2.044409597239468e-07,
+        "execution_time_std": 2.0656393384239297e-07,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -122,12 +122,12 @@
       "output_shape": [
         128
       ],
-      "execution_time": 1.4082650011459918e-05,
+      "execution_time": 9.295850003354644e-06,
       "memory_usage": 2052,
-      "throughput": 71009.36252667208,
+      "throughput": 107574.88552839434,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 1.1026263546928676e-06,
+        "execution_time_std": 1.7207748010331783e-07,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -148,12 +148,12 @@
       "output_shape": [
         128
       ],
-      "execution_time": 9.637800008022169e-06,
+      "execution_time": 1.3794300008385107e-05,
       "memory_usage": 2052,
-      "throughput": 103758.11898645281,
+      "throughput": 72493.71112648938,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 2.5871638864818127e-07,
+        "execution_time_std": 6.978176746108249e-07,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -176,12 +176,12 @@
         50,
         256
       ],
-      "execution_time": 0.0017989409500103193,
+      "execution_time": 0.0017904442500082495,
       "memory_usage": 154824,
-      "throughput": 555.8826152655337,
+      "throughput": 558.5206017977898,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 1.6591457702646387e-05,
+        "execution_time_std": 1.9509919624006133e-05,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -204,12 +204,12 @@
         100,
         256
       ],
-      "execution_time": 0.0035867746500116483,
+      "execution_time": 0.003568566399997053,
       "memory_usage": 308624,
-      "throughput": 278.8020150629626,
+      "throughput": 280.22457421580435,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 5.686483042407892e-05,
+        "execution_time_std": 2.9047595079621828e-05,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -232,12 +232,12 @@
         500,
         256
       ],
-      "execution_time": 0.0455598032500177,
+      "execution_time": 0.04528738770001155,
       "memory_usage": 1539024,
-      "throughput": 21.949172925798614,
+      "throughput": 22.081202974746653,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 0.0007191842659147428,
+        "execution_time_std": 0.0003584266047273223,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -262,12 +262,12 @@
         50,
         256
       ],
-      "execution_time": 0.0063315389000081265,
+      "execution_time": 0.006331344850019604,
       "memory_usage": 189200,
-      "throughput": 157.93948608587345,
+      "throughput": 157.94432678815522,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 0.00017320073280701245,
+        "execution_time_std": 0.00038766265431305414,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -292,12 +292,12 @@
         100,
         256
       ],
-      "execution_time": 0.0242987606500094,
+      "execution_time": 0.024299384699997973,
       "memory_usage": 398400,
-      "throughput": 41.15436233162835,
+      "throughput": 41.15330541682742,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 0.0003540219139337796,
+        "execution_time_std": 0.0006734842000623613,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -322,12 +322,12 @@
         500,
         256
       ],
-      "execution_time": 0.4258583713500002,
+      "execution_time": 0.4196128383499797,
       "memory_usage": 2792000,
-      "throughput": 2.3481985262610467,
+      "throughput": 2.3831491999440355,
       "accuracy": 1.0,
       "additional_metrics": {
-        "execution_time_std": 0.001419007857529297,
+        "execution_time_std": 0.002380678825063084,
         "iterations": 20,
         "warmup_iterations": 10
       }
@@ -336,16 +336,16 @@
   "summary_stats": {
     "total_operations": 12,
     "execution_time": {
-      "mean": 0.04231210503333784,
-      "median": 0.0009455341000034423,
-      "std": 0.12157822847458466,
-      "min": 9.637800008022169e-06,
-      "max": 0.4258583713500002
+      "mean": 0.04176637834166712,
+      "median": 0.0009402722000089624,
+      "std": 0.11978739818656407,
+      "min": 9.295850003354644e-06,
+      "max": 0.4196128383499797
     },
     "throughput": {
-      "mean": 23363.04089601506,
-      "median": 5705.217168126172,
-      "total": 280356.4907521807
+      "mean": 24029.58288147851,
+      "median": 5828.640628748599,
+      "total": 288354.9945777421
     },
     "memory_usage": {
       "mean": 450811,
