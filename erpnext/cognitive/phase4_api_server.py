@@ -317,8 +317,8 @@ class CognitiveAPIServer:
                 })
                 
             except Exception as e:
-                logger.error(f"State propagation error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                logger.error("State propagation error occurred", exc_info=True)
+                return jsonify({"error": "An internal error occurred."}), 500
     
     def _setup_websocket_handlers(self):
         """Setup WebSocket event handlers"""
