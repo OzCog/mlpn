@@ -2,9 +2,19 @@ import functools
 import inspect
 from typing import TypeVar
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils.user import is_website_user
+# Make frappe optional for cognitive modules
+try:
+    import frappe
+    from frappe.model.document import Document
+    from frappe.utils.user import is_website_user
+    FRAPPE_AVAILABLE = True
+except ImportError:
+    # Cognitive modules can work without frappe
+    FRAPPE_AVAILABLE = False
+    # Create mock objects for cognitive modules
+    class MockDocument:
+        pass
+    Document = MockDocument
 
 __version__ = "16.0.0-dev"
 
