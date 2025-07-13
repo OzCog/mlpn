@@ -106,9 +106,17 @@ class Ko6mlTranslator:
             truth_value
         )
         
-        # Store bidirectional mapping
+        # Store bidirectional mapping with original type preserved
         self.ko6ml_to_atom_mapping[id(ko6ml_expr)] = atom_id
-        self.atom_to_ko6ml_mapping[atom_id] = ko6ml_expr
+        
+        # Store the original ko6ml type as metadata for round-trip fidelity
+        enhanced_ko6ml = Ko6mlExpression(
+            primitive_type=ko6ml_expr.primitive_type,
+            name=ko6ml_expr.name,
+            parameters=ko6ml_expr.parameters.copy(),
+            metadata=ko6ml_expr.metadata.copy()
+        )
+        self.atom_to_ko6ml_mapping[atom_id] = enhanced_ko6ml
         
         # Handle parameters as additional atoms/links
         self._process_parameters(atom_id, ko6ml_expr.parameters)
@@ -125,6 +133,10 @@ class Ko6mlTranslator:
         Returns:
             ko6ml expression or None if not found
         """
+        # Check if we have a stored mapping first (for round-trip fidelity)
+        if atom_id in self.atom_to_ko6ml_mapping:
+            return self.atom_to_ko6ml_mapping[atom_id]
+        
         atom = self.atomspace.get_atom(atom_id)
         if not atom:
             return None
@@ -283,8 +295,18 @@ class Ko6mlTranslator:
     
     def _atom_type_to_ko6ml(self, atom_type: AtomType) -> Ko6mlPrimitive:
         """Map AtomSpace type to ko6ml primitive"""
-        reverse_mapping = {v: k for k, v in self.primitive_mappings.items()}
-        return reverse_mapping.get(atom_type, Ko6mlPrimitive.ENTITY)
+        # Handle ambiguous mappings by preferring the most common usage
+        if atom_type == AtomType.CONCEPT:
+            # Default to ENTITY for concepts (most common usage)
+            return Ko6mlPrimitive.ENTITY
+        elif atom_type == AtomType.PREDICATE:
+            return Ko6mlPrimitive.RELATION
+        elif atom_type == AtomType.SCHEMA:
+            return Ko6mlPrimitive.RULE
+        elif atom_type == AtomType.VARIABLE:
+            return Ko6mlPrimitive.PATTERN
+        else:
+            return Ko6mlPrimitive.ENTITY
     
     def _link_type_to_relation(self, link_type: str) -> str:
         """Map AtomSpace link type to ko6ml relation"""

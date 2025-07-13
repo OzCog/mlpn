@@ -113,6 +113,95 @@ class AtomSpaceHTTPHandler(BaseHTTPRequestHandler):
         except ValueError as e:
             self._send_error(400, f"Invalid value: {str(e)}")
     
+    def _handle_get_atom(self, atom_id):
+        """Get individual atom by ID"""
+        atomspace = self.server.atomspace
+        
+        try:
+            atom = atomspace.get_atom(atom_id)
+            if atom:
+                self._send_json_response(self._atom_to_dict(atom))
+            else:
+                self._send_error(404, f"Atom not found: {atom_id}")
+        except Exception as e:
+            self._send_error(500, f"Error retrieving atom: {str(e)}")
+    
+    def _handle_list_links(self, query_params):
+        """List links with optional type filtering"""
+        atomspace = self.server.atomspace
+        link_type = query_params.get('type', [None])[0]
+        
+        if link_type:
+            try:
+                filter_type = LinkType(link_type)
+                links = atomspace.find_links_by_type(filter_type)
+            except ValueError:
+                self._send_error(400, f"Invalid link type: {link_type}")
+                return
+        else:
+            links = list(atomspace.links.values())
+        
+        response_data = [self._link_to_dict(link) for link in links]
+        self._send_json_response(response_data)
+    
+    def _handle_create_link(self, data):
+        """Create new link"""
+        atomspace = self.server.atomspace
+        
+        try:
+            link_type = LinkType(data['type'])
+            atoms = data['atoms']
+            truth_value = None
+            
+            if 'truth_value' in data:
+                tv_data = data['truth_value']
+                truth_value = TruthValue(tv_data['strength'], tv_data['confidence'])
+            
+            link_id = atomspace.add_link(link_type, atoms, truth_value)
+            link = atomspace.get_link(link_id)
+            
+            self._send_json_response(self._link_to_dict(link), status=201)
+        except KeyError as e:
+            self._send_error(400, f"Missing required field: {str(e)}")
+        except ValueError as e:
+            self._send_error(400, f"Invalid value: {str(e)}")
+    
+    def _handle_get_link(self, link_id):
+        """Get individual link by ID"""
+        atomspace = self.server.atomspace
+        
+        try:
+            link = atomspace.get_link(link_id)
+            if link:
+                self._send_json_response(self._link_to_dict(link))
+            else:
+                self._send_error(404, f"Link not found: {link_id}")
+        except Exception as e:
+            self._send_error(500, f"Error retrieving link: {str(e)}")
+    
+    def _handle_query_atoms(self, data):
+        """Query atoms based on criteria"""
+        atomspace = self.server.atomspace
+        
+        try:
+            # Simple query implementation
+            criteria = data.get('criteria', {})
+            atom_type = criteria.get('type')
+            min_strength = criteria.get('min_strength', 0.0)
+            
+            atoms = list(atomspace.atoms.values())
+            
+            if atom_type:
+                atoms = [atom for atom in atoms if atom.atom_type.value == atom_type]
+            
+            if min_strength > 0:
+                atoms = [atom for atom in atoms if atom.truth_value.strength >= min_strength]
+            
+            response_data = [self._atom_to_dict(atom) for atom in atoms]
+            self._send_json_response(response_data)
+        except Exception as e:
+            self._send_error(500, f"Error querying atoms: {str(e)}")
+    
     def _handle_get_stats(self):
         """Get AtomSpace statistics"""
         atomspace = self.server.atomspace
@@ -142,6 +231,18 @@ class AtomSpaceHTTPHandler(BaseHTTPRequestHandler):
                 "confidence": atom.truth_value.confidence
             },
             "prime_index": atom.prime_index
+        }
+    
+    def _link_to_dict(self, link):
+        """Convert link to dictionary"""
+        return {
+            "id": link.id,
+            "type": link.link_type.value,
+            "atoms": link.atoms,
+            "truth_value": {
+                "strength": link.truth_value.strength,
+                "confidence": link.truth_value.confidence
+            }
         }
     
     def _send_json_response(self, data, status=200):
