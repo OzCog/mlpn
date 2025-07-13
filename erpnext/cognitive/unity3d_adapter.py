@@ -102,8 +102,9 @@ class Unity3DProtocol:
 class Unity3DIntegrationAdapter:
     """Main adapter for Unity3D embodiment integration"""
     
-    def __init__(self, port: int = 7777, max_agents: int = 100):
+    def __init__(self, port: int = 7777, host: str = '127.0.0.1', max_agents: int = 100):
         self.port = port
+        self.host = host
         self.max_agents = max_agents
         
         # Connection management
@@ -136,7 +137,7 @@ class Unity3DIntegrationAdapter:
         """Start the Unity3D integration server"""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind(('0.0.0.0', self.port))
+        self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
         
         self.running = True
