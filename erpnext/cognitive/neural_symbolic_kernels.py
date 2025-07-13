@@ -3,6 +3,8 @@ Neural-Symbolic Synthesis Kernels
 
 Custom GGML kernels for seamless neural-symbolic computation and inference.
 Implements real neural-symbolic operations replacing Phase 2 placeholders.
+
+Enhanced with AtomSpace integration and comprehensive GGML optimizations.
 """
 
 import numpy as np
@@ -58,6 +60,7 @@ class GGMLConceptualEmbeddingKernel(NeuralSymbolicKernel):
     """
     Custom GGML kernel for conceptual embedding synthesis.
     Combines neural embeddings with symbolic concept representations.
+    Enhanced with AtomSpace integration and GGML optimizations.
     """
     
     def __init__(self, concept_dim: int = 256, embedding_dim: int = 512):
@@ -65,13 +68,37 @@ class GGMLConceptualEmbeddingKernel(NeuralSymbolicKernel):
         self.embedding_dim = embedding_dim
         self.operation_count = 0
         
-        # Initialize conceptual transformation matrices
-        self.concept_transform = np.random.randn(concept_dim, embedding_dim) * 0.1
-        self.symbolic_weights = np.random.randn(concept_dim, concept_dim) * 0.1
+        # Enhanced GGML-optimized transformation matrices
+        self.concept_transform = self._init_ggml_matrix(concept_dim, embedding_dim)
+        self.symbolic_weights = self._init_ggml_matrix(concept_dim, concept_dim)
+        
+        # AtomSpace integration components
+        self.atomspace_nodes = {}
+        self.neural_inference_hooks = []
+        
+    def _init_ggml_matrix(self, rows: int, cols: int) -> np.ndarray:
+        """Initialize GGML-optimized matrix with proper alignment"""
+        # Xavier/Glorot initialization optimized for GGML
+        scale = np.sqrt(2.0 / (rows + cols))
+        matrix = np.random.randn(rows, cols).astype(np.float32) * scale
+        
+        # Ensure C-contiguous layout for GGML optimization
+        return np.ascontiguousarray(matrix)
+        
+    def register_atomspace_node(self, node_name: str, embedding: np.ndarray, truth_value: Dict[str, float]):
+        """Register AtomSpace node for neural inference"""
+        self.atomspace_nodes[node_name] = {
+            "embedding": embedding.astype(np.float32),
+            "truth_value": truth_value
+        }
+        
+    def add_neural_inference_hook(self, hook_func: Callable):
+        """Add neural inference hook for AtomSpace integration"""
+        self.neural_inference_hooks.append(hook_func)
         
     def forward(self, inputs: List[np.ndarray]) -> np.ndarray:
         """
-        Synthesize neural embeddings with symbolic concepts
+        Enhanced neural-symbolic synthesis with AtomSpace integration
         
         Args:
             inputs: [neural_embedding, symbolic_concept]
@@ -82,29 +109,14 @@ class GGMLConceptualEmbeddingKernel(NeuralSymbolicKernel):
         self.operation_count += 1
         neural_embedding, symbolic_concept = inputs
         
-        # Ensure compatibility between neural and symbolic dimensions
-        if neural_embedding.shape[0] != self.embedding_dim:
-            # Resize neural embedding to match expected dimension
-            if neural_embedding.shape[0] > self.embedding_dim:
-                neural_embedding = neural_embedding[:self.embedding_dim]
-            else:
-                padded = np.zeros(self.embedding_dim, dtype=neural_embedding.dtype)
-                padded[:neural_embedding.shape[0]] = neural_embedding
-                neural_embedding = padded
-                
-        if symbolic_concept.shape[0] != self.concept_dim:
-            # Resize symbolic concept to match expected dimension  
-            if symbolic_concept.shape[0] > self.concept_dim:
-                symbolic_concept = symbolic_concept[:self.concept_dim]
-            else:
-                padded = np.zeros(self.concept_dim, dtype=symbolic_concept.dtype)
-                padded[:symbolic_concept.shape[0]] = symbolic_concept
-                symbolic_concept = padded
+        # GGML tensor format optimization
+        neural_embedding = self._ggml_tensor_optimize(neural_embedding, self.embedding_dim)
+        symbolic_concept = self._ggml_tensor_optimize(symbolic_concept, self.concept_dim)
         
         # Transform symbolic concept to embedding space
         concept_embedding = np.dot(symbolic_concept, self.concept_transform)
         
-        # Apply symbolic reasoning transformation
+        # Apply enhanced symbolic reasoning transformation
         symbolic_reasoning = np.dot(symbolic_concept, self.symbolic_weights)
         
         # Neural-symbolic synthesis via attention-weighted combination
@@ -117,6 +129,60 @@ class GGMLConceptualEmbeddingKernel(NeuralSymbolicKernel):
             0.1 * np.dot(symbolic_reasoning, self.concept_transform)
         )
         
+        # Apply AtomSpace inference hooks
+        synthesis = self._apply_atomspace_inference(synthesis)
+        
+        return synthesis
+        
+    def _ggml_tensor_optimize(self, tensor: np.ndarray, target_dim: int) -> np.ndarray:
+        """Apply GGML tensor optimizations"""
+        # Ensure proper dimension alignment
+        if tensor.shape[0] != target_dim:
+            if tensor.shape[0] > target_dim:
+                tensor = tensor[:target_dim]
+            else:
+                padded = np.zeros(target_dim, dtype=np.float32)
+                padded[:tensor.shape[0]] = tensor
+                tensor = padded
+                
+        # Ensure float32 precision for GGML compatibility
+        if tensor.dtype != np.float32:
+            tensor = tensor.astype(np.float32)
+            
+        # Ensure C-contiguous layout for SIMD operations
+        if not tensor.flags['C_CONTIGUOUS']:
+            tensor = np.ascontiguousarray(tensor)
+            
+        return tensor
+        
+    def _apply_atomspace_inference(self, synthesis: np.ndarray) -> np.ndarray:
+        """Apply AtomSpace neural inference hooks"""
+        # Apply registered inference hooks
+        for hook_func in self.neural_inference_hooks:
+            try:
+                synthesis = hook_func(synthesis, self.atomspace_nodes)
+            except Exception as e:
+                # Graceful degradation if hook fails
+                pass
+                
+        # Apply AtomSpace node influences
+        for node_name, node_data in self.atomspace_nodes.items():
+            truth_value = node_data["truth_value"]
+            if truth_value.get("strength", 0) > 0.7:  # High confidence
+                node_embedding = node_data["embedding"]
+                confidence = truth_value.get("confidence", 0.5)
+                
+                # Ensure compatible dimensions
+                if node_embedding.shape[0] > synthesis.shape[0]:
+                    node_embedding = node_embedding[:synthesis.shape[0]]
+                elif node_embedding.shape[0] < synthesis.shape[0]:
+                    padded = np.zeros(synthesis.shape[0], dtype=np.float32)
+                    padded[:node_embedding.shape[0]] = node_embedding
+                    node_embedding = padded
+                
+                # Apply modus ponens-style inference
+                synthesis = synthesis + confidence * 0.1 * node_embedding
+                
         return synthesis
         
     def backward(self, gradient: np.ndarray) -> List[np.ndarray]:
