@@ -6,24 +6,39 @@ Implements real implementation verification with no mocks.
 """
 
 import numpy as np
-import pytest
 import time
 import json
 from typing import Dict, List, Tuple, Any, Optional
 from pathlib import Path
 
 # Import our neural-symbolic components
-from .neural_symbolic_kernels import (
-    CustomGGMLKernelRegistry, 
-    create_default_kernel_registry,
-    NeuralSymbolicSynthesizer,
-    GGMLConceptualEmbeddingKernel,
-    GGMLLogicalInferenceKernel,
-    GGMLAttentionAllocationKernel,
-    GGMLHypergraphConvolutionKernel
-)
-from .tensor_benchmarking import TensorSignatureBenchmark, create_standard_benchmark_suite
-from .tensor_kernel import TensorKernel, TensorFormat
+try:
+    from .neural_symbolic_kernels import (
+        CustomGGMLKernelRegistry, 
+        create_default_kernel_registry,
+        NeuralSymbolicSynthesizer,
+        GGMLConceptualEmbeddingKernel,
+        GGMLLogicalInferenceKernel,
+        GGMLAttentionAllocationKernel,
+        GGMLHypergraphConvolutionKernel
+    )
+    from .tensor_benchmarking import TensorSignatureBenchmark, create_standard_benchmark_suite
+    from .tensor_kernel import TensorKernel, TensorFormat
+except ImportError:
+    import sys
+    import os
+    sys.path.append(os.path.dirname(__file__))
+    from neural_symbolic_kernels import (
+        CustomGGMLKernelRegistry, 
+        create_default_kernel_registry,
+        NeuralSymbolicSynthesizer,
+        GGMLConceptualEmbeddingKernel,
+        GGMLLogicalInferenceKernel,
+        GGMLAttentionAllocationKernel,
+        GGMLHypergraphConvolutionKernel
+    )
+    from tensor_benchmarking import TensorSignatureBenchmark, create_standard_benchmark_suite
+    from tensor_kernel import TensorKernel, TensorFormat
 
 
 class Phase3VerificationSuite:

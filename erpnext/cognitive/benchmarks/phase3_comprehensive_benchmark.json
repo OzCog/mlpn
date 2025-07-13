@@ -1,0 +1,356 @@
+{
+  "suite_name": "kernel_registry_benchmark_1752431914",
+  "timestamp": 1752431929.9832466,
+  "system_info": {
+    "platform": "Linux-6.11.0-1018-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python_version": "3.12.3",
+    "numpy_version": "2.3.1",
+    "cpu_count": 4,
+    "memory_total": 16772579328,
+    "memory_available": 15309283328
+  },
+  "results": [
+    {
+      "operation_name": "conceptual_embedding_size_50",
+      "input_shapes": [
+        [
+          512
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        512
+      ],
+      "execution_time": 9.117244999288233e-05,
+      "memory_usage": 7168,
+      "throughput": 10968.225599707679,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 5.315158771816577e-06,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "conceptual_embedding_size_100",
+      "input_shapes": [
+        [
+          512
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        512
+      ],
+      "execution_time": 9.008550000544346e-05,
+      "memory_usage": 7168,
+      "throughput": 11100.565573145228,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 4.851833438055214e-06,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "conceptual_embedding_size_500",
+      "input_shapes": [
+        [
+          512
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        512
+      ],
+      "execution_time": 9.21272499965653e-05,
+      "memory_usage": 7168,
+      "throughput": 10854.55172098681,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 6.202841554494742e-06,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "logical_inference_size_50",
+      "input_shapes": [
+        [
+          128
+        ],
+        [
+          128
+        ],
+        [
+          1
+        ]
+      ],
+      "output_shape": [
+        128
+      ],
+      "execution_time": 1.3964999982363225e-05,
+      "memory_usage": 2052,
+      "throughput": 71607.59049501804,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 2.044409597239468e-07,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "logical_inference_size_100",
+      "input_shapes": [
+        [
+          128
+        ],
+        [
+          128
+        ],
+        [
+          1
+        ]
+      ],
+      "output_shape": [
+        128
+      ],
+      "execution_time": 1.4082650011459918e-05,
+      "memory_usage": 2052,
+      "throughput": 71009.36252667208,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 1.1026263546928676e-06,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "logical_inference_size_500",
+      "input_shapes": [
+        [
+          128
+        ],
+        [
+          128
+        ],
+        [
+          1
+        ]
+      ],
+      "output_shape": [
+        128
+      ],
+      "execution_time": 9.637800008022169e-06,
+      "memory_usage": 2052,
+      "throughput": 103758.11898645281,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 2.5871638864818127e-07,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "attention_allocation_size_50",
+      "input_shapes": [
+        [
+          50,
+          256
+        ],
+        [
+          50
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        50,
+        256
+      ],
+      "execution_time": 0.0017989409500103193,
+      "memory_usage": 154824,
+      "throughput": 555.8826152655337,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 1.6591457702646387e-05,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "attention_allocation_size_100",
+      "input_shapes": [
+        [
+          100,
+          256
+        ],
+        [
+          100
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        100,
+        256
+      ],
+      "execution_time": 0.0035867746500116483,
+      "memory_usage": 308624,
+      "throughput": 278.8020150629626,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 5.686483042407892e-05,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "attention_allocation_size_500",
+      "input_shapes": [
+        [
+          500,
+          256
+        ],
+        [
+          500
+        ],
+        [
+          256
+        ]
+      ],
+      "output_shape": [
+        500,
+        256
+      ],
+      "execution_time": 0.0455598032500177,
+      "memory_usage": 1539024,
+      "throughput": 21.949172925798614,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 0.0007191842659147428,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "hypergraph_convolution_size_50",
+      "input_shapes": [
+        [
+          50,
+          256
+        ],
+        [
+          50,
+          128
+        ],
+        [
+          50,
+          50
+        ]
+      ],
+      "output_shape": [
+        50,
+        256
+      ],
+      "execution_time": 0.0063315389000081265,
+      "memory_usage": 189200,
+      "throughput": 157.93948608587345,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 0.00017320073280701245,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "hypergraph_convolution_size_100",
+      "input_shapes": [
+        [
+          100,
+          256
+        ],
+        [
+          100,
+          128
+        ],
+        [
+          100,
+          100
+        ]
+      ],
+      "output_shape": [
+        100,
+        256
+      ],
+      "execution_time": 0.0242987606500094,
+      "memory_usage": 398400,
+      "throughput": 41.15436233162835,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 0.0003540219139337796,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    },
+    {
+      "operation_name": "hypergraph_convolution_size_500",
+      "input_shapes": [
+        [
+          500,
+          256
+        ],
+        [
+          500,
+          128
+        ],
+        [
+          500,
+          500
+        ]
+      ],
+      "output_shape": [
+        500,
+        256
+      ],
+      "execution_time": 0.4258583713500002,
+      "memory_usage": 2792000,
+      "throughput": 2.3481985262610467,
+      "accuracy": 1.0,
+      "additional_metrics": {
+        "execution_time_std": 0.001419007857529297,
+        "iterations": 20,
+        "warmup_iterations": 10
+      }
+    }
+  ],
+  "summary_stats": {
+    "total_operations": 12,
+    "execution_time": {
+      "mean": 0.04231210503333784,
+      "median": 0.0009455341000034423,
+      "std": 0.12157822847458466,
+      "min": 9.637800008022169e-06,
+      "max": 0.4258583713500002
+    },
+    "throughput": {
+      "mean": 23363.04089601506,
+      "median": 5705.217168126172,
+      "total": 280356.4907521807
+    },
+    "memory_usage": {
+      "mean": 450811,
+      "total": 5409732,
+      "max": 2792000
+    }
+  }
+}

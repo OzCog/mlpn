@@ -45,8 +45,17 @@ class TensorKernel:
             self._neural_symbolic_registry = create_default_kernel_registry()
             return True
         except ImportError:
-            print("Warning: Neural-symbolic kernels not available")
-            return False
+            try:
+                # Try absolute import
+                import sys
+                import os
+                sys.path.append(os.path.dirname(__file__))
+                from neural_symbolic_kernels import create_default_kernel_registry
+                self._neural_symbolic_registry = create_default_kernel_registry()
+                return True
+            except ImportError:
+                print("Warning: Neural-symbolic kernels not available")
+                return False
             
     def neural_symbolic_operation(self, 
                                 operation_name: str,
@@ -350,13 +359,19 @@ class TensorKernel:
         
     def get_operation_stats(self) -> Dict[str, Any]:
         """Get tensor operation statistics"""
-        return {
+        stats = {
             "operation_count": self._operation_count,
             "cached_tensors": len(self._tensor_cache),
             "registered_shapes": len(self._shape_registry),
             "backend": self.backend,
-            "precision": self.precision
+            "precision": self.precision,
+            "neural_symbolic_enabled": self._neural_symbolic_registry is not None
         }
+        
+        if self._neural_symbolic_registry:
+            stats.update(self._neural_symbolic_registry.get_registry_stats())
+            
+        return stats
         
     def scheme_tensor_shape(self, kernel_name: str) -> str:
         """
@@ -410,3 +425,5 @@ def initialize_default_shapes(kernel: TensorKernel) -> None:
         "meta_tensor_rank": 3,
         "monitoring_channels": 16
     })
+    
+    return kernel
