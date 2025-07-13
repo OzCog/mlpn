@@ -1,0 +1,297 @@
+version: '3.8'
+
+# Production Deployment for Phase 4: Distributed Cognitive Mesh API & Embodiment Layer
+# This docker-compose configuration deploys the complete cognitive mesh infrastructure
+
+services:
+  # Main Cognitive API Server
+  cognitive-api:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.api
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=5000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:cognitive_mesh@postgres:5432/cognitive_mesh
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    volumes:
+      - cognitive_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Unity3D Integration Adapter
+  unity3d-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.unity3d
+    ports:
+      - "7777:7777"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=7777
+      - MAX_AGENTS=1000
+      - API_SERVER_URL=http://cognitive-api:5000
+    depends_on:
+      - cognitive-api
+    restart: unless-stopped
+    volumes:
+      - unity_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 7777), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ROS Integration Adapter
+  ros-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.ros
+    ports:
+      - "8888:8888"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8888
+      - ROS_MASTER_URI=http://ros-master:11311
+      - API_SERVER_URL=http://cognitive-api:5000
+    depends_on:
+      - cognitive-api
+      - ros-master
+    restart: unless-stopped
+    volumes:
+      - ros_logs:/app/logs
+    networks:
+      - cognitive-mesh
+      - ros-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8888), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Web Agent Integration Adapter
+  web-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.web
+    ports:
+      - "6666:6666"
+    environment:
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=6666
+      - API_SERVER_URL=http://cognitive-api:5000
+    depends_on:
+      - cognitive-api
+    restart: unless-stopped
+    volumes:
+      - web_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6666/api/mesh/state"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and message queuing
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for persistent data storage
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cognitive_mesh
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=cognitive_mesh
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ROS Master for ROS integration
+  ros-master:
+    image: ros:noetic-ros-core
+    command: roscore
+    ports:
+      - "11311:11311"
+    environment:
+      - ROS_MASTER_URI=http://localhost:11311
+    restart: unless-stopped
+    networks:
+      - ros-network
+    healthcheck:
+      test: ["CMD", "rostopic", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Load Balancer and Reverse Proxy
+  nginx:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - cognitive-api
+      - web-adapter
+    restart: unless-stopped
+    volumes:
+      - nginx_logs:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - cognitive-mesh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - cognitive-mesh
+
+  # Visualization with Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=cognitive_mesh_grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - cognitive-mesh
+
+  # Log aggregation with ELK Stack
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - cognitive-mesh
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    ports:
+      - "5044:5044"
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
+    restart: unless-stopped
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    depends_on:
+      - elasticsearch
+    networks:
+      - cognitive-mesh
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    networks:
+      - cognitive-mesh
+
+networks:
+  cognitive-mesh:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  ros-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  cognitive_logs:
+    driver: local
+  unity_logs:
+    driver: local
+  ros_logs:
+    driver: local
+  web_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
