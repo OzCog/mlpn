@@ -1,0 +1,136 @@
+version: '3.8'
+
+# Development Deployment for Phase 4: Distributed Cognitive Mesh API & Embodiment Layer
+# This configuration is optimized for development and testing
+
+services:
+  # Main Cognitive API Server
+  cognitive-api:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.api
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=5000
+    volumes:
+      - ../:/app/src:ro  # Mount source code for development
+      - cognitive_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    command: python -u phase4_api_server.py --debug
+
+  # Unity3D Integration Adapter
+  unity3d-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.unity3d
+    ports:
+      - "7777:7777"
+    environment:
+      - ENVIRONMENT=development
+      - PORT=7777
+      - MAX_AGENTS=100
+    volumes:
+      - ../:/app/src:ro
+      - unity_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    command: python -u unity3d_adapter.py --port 7777
+
+  # ROS Integration Adapter
+  ros-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.ros
+    ports:
+      - "8888:8888"
+    environment:
+      - ENVIRONMENT=development
+      - PORT=8888
+      - ROS_MASTER_URI=http://localhost:11311
+    volumes:
+      - ../:/app/src:ro
+      - ros_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    command: python -u ros_adapter.py --port 8888
+
+  # Web Agent Integration Adapter
+  web-adapter:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.web
+    ports:
+      - "6666:6666"
+    environment:
+      - ENVIRONMENT=development
+      - HOST=0.0.0.0
+      - PORT=6666
+    volumes:
+      - ../:/app/src:ro
+      - web_logs:/app/logs
+    networks:
+      - cognitive-mesh
+    command: python -u web_agent_adapter.py --host 0.0.0.0 --port 6666
+
+  # Redis for development
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - cognitive-mesh
+
+  # Development Test Runner
+  test-runner:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.test
+    environment:
+      - ENVIRONMENT=test
+    volumes:
+      - ../:/app/src:ro
+      - test_results:/app/test_results
+    networks:
+      - cognitive-mesh
+    profiles:
+      - testing
+    command: python -u phase4_acceptance_test.py
+
+  # Development Demo Runner
+  demo-runner:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.demo
+    environment:
+      - ENVIRONMENT=development
+    volumes:
+      - ../:/app/src:ro
+      - demo_results:/app/demo_results
+    networks:
+      - cognitive-mesh
+    profiles:
+      - demo
+    command: python -u phase4_demo.py --mode comprehensive
+
+networks:
+  cognitive-mesh:
+    driver: bridge
+
+volumes:
+  cognitive_logs:
+    driver: local
+  unity_logs:
+    driver: local
+  ros_logs:
+    driver: local
+  web_logs:
+    driver: local
+  test_results:
+    driver: local
+  demo_results:
+    driver: local
