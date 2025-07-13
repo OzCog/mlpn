@@ -273,7 +273,7 @@ class CognitiveAPIServer:
                 
             except Exception as e:
                 logger.error(f"Embodiment binding error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                return jsonify({"error": "An internal error occurred."}), 500
         
         @self.app.route('/embodiment/bindings', methods=['GET'])
         def list_bindings():
