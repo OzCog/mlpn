@@ -975,10 +975,22 @@ class Phase6DeepTestingProtocols(unittest.TestCase):
             }
         }
         
-        # Save report
+        # Save report with proper JSON serialization
         report_path = os.path.join(os.path.dirname(__file__), "phase6_deep_testing_report.json")
         with open(report_path, 'w') as f:
-            json.dump(report, f, indent=2)
+            # Convert any non-serializable objects
+            def serialize_item(obj):
+                if isinstance(obj, (bool, int, float, str, type(None))):
+                    return obj
+                elif isinstance(obj, dict):
+                    return {k: serialize_item(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_item(item) for item in obj]
+                else:
+                    return str(obj)
+            
+            serializable_report = serialize_item(report)
+            json.dump(serializable_report, f, indent=2)
             
         logger.info(f"✅ Deep testing protocols report saved to {report_path}")
         

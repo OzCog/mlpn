@@ -1,11 +1,11 @@
 {
   "phase6_comprehensive_test_report": {
-    "timestamp": "2025-07-14T04:46:47.367876",
+    "timestamp": "2025-07-14T05:06:50.028981",
     "summary": {
-      "total_tests": 1,
-      "passed_tests": 1,
+      "total_tests": 2,
+      "passed_tests": 2,
       "success_rate": 1.0,
-      "overall_cognitive_unity_score": 1.0,
+      "overall_cognitive_unity_score": 0.8541039579937599,
       "phases_covered": [
         1,
         2,
@@ -18,6 +18,23 @@
     },
     "detailed_results": [
       {
+        "test_name": "complete_cognitive_architecture_integration",
+        "phase_coverage": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "unity_score": 0.7082079159875198,
+        "status": "PASSED",
+        "performance": {
+          "unity_score": 0.7082079159875198,
+          "test_duration": 0.031085491180419922,
+          "components_tested": 6
+        }
+      },
+      {
         "test_name": "performance_benchmarks",
         "phase_coverage": [
           1,
@@ -29,16 +46,16 @@
         "unity_score": 1.0,
         "status": "PASSED",
         "performance": {
-          "tensor_ops_per_second": 199823.91615054788,
-          "knowledge_ops_per_second": 82809.55577492596,
-          "attention_ops_per_second": 803506.5134099617,
-          "meta_ops_per_second": 263.03997993164216
+          "tensor_ops_per_second": 196178.85874649204,
+          "knowledge_ops_per_second": 83452.12892956626,
+          "attention_ops_per_second": 748982.8571428572,
+          "meta_ops_per_second": 254.61843391266868
         }
       }
     ],
     "cognitive_unification_validation": {
       "status": "ACHIEVED",
-      "unity_score": 1.0,
+      "unity_score": 0.8541039579937599,
       "recursive_modularity": "CONFIRMED",
       "cross_phase_integration": "VALIDATED",
       "emergent_synthesis": "DEMONSTRATED"
