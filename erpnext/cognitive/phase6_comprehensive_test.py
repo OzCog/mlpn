@@ -791,7 +791,10 @@ class Phase6ComprehensiveTestSuite(unittest.TestCase):
             json.dump(report, f, indent=2)
             
         logger.info(f"✅ Phase 6 comprehensive test report saved to {report_path}")
-        logger.info(f"🎯 Overall Success Rate: {passed_tests}/{total_tests} ({100*passed_tests/total_tests:.1f}%)")
+        if total_tests > 0:
+            logger.info(f"🎯 Overall Success Rate: {passed_tests}/{total_tests} ({100*passed_tests/total_tests:.1f}%)")
+        else:
+            logger.info(f"🎯 Overall Success Rate: {passed_tests}/0 (No tests completed)")
         logger.info(f"🧠 Cognitive Unity Score: {overall_unity_score:.3f}")
         
         # Print summary

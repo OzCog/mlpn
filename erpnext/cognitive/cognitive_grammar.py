@@ -201,8 +201,23 @@ class AtomSpace:
             prime_product *= prime
             
         # Normalize by number of atoms
-        density = np.log(prime_product) / len(self.atoms)
-        return density
+        if len(self.atoms) == 0:
+            return 0.0
+        
+        # Handle large prime products to avoid overflow
+        try:
+            if prime_product > 1e10:  # Too large for safe float conversion
+                # Use log properties: log(a*b) = log(a) + log(b)
+                log_sum = 0.0
+                for prime in self.prime_indices.keys():
+                    log_sum += np.log(float(prime))
+                density = log_sum / len(self.atoms)
+            else:
+                density = np.log(float(prime_product)) / len(self.atoms)
+            return density
+        except (OverflowError, ValueError):
+            # Fallback for very large numbers
+            return np.log(len(self.prime_indices)) if len(self.prime_indices) > 0 else 0.0
 
 
 class PLN:
