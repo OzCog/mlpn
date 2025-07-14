@@ -729,10 +729,22 @@ class Phase6AcceptanceTestSuite(unittest.TestCase):
             
         logger.info(f"✅ Phase 6 acceptance criteria validation complete. Status: {acceptance_status}")
         
-        # Save acceptance report
+        # Save acceptance report with proper JSON serialization
         report_path = os.path.join(os.path.dirname(__file__), "phase6_acceptance_test_report.json")
         with open(report_path, 'w') as f:
-            json.dump(acceptance_report, f, indent=2)
+            # Convert any non-serializable objects
+            def serialize_item(obj):
+                if isinstance(obj, (bool, int, float, str, type(None))):
+                    return obj
+                elif isinstance(obj, dict):
+                    return {k: serialize_item(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_item(item) for item in obj]
+                else:
+                    return str(obj)
+            
+            serializable_report = serialize_item(acceptance_report)
+            json.dump(serializable_report, f, indent=2)
             
         logger.info(f"📊 Acceptance report saved to {report_path}")
         

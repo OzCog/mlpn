@@ -380,7 +380,7 @@ class MetaCognitive:
     def __init__(self):
         self.state_monitor = MetaStateMonitor()
         self.introspector = RecursiveIntrospector()
-        self.cognitive_layers: Dict[MetaLayer, Any] = {}
+        self.cognitive_layers: Dict[Union[MetaLayer, str], Any] = {}
         self.meta_tensor_history: List[Dict[MetaLayer, MetaTensor]] = []
         
     def register_layer(self, layer: Union[MetaLayer, str], instance: Any) -> None:
@@ -399,9 +399,10 @@ class MetaCognitive:
                     layer = meta_layer
                     break
             else:
-                # If no match found, create a temporary enum-like object
-                from types import SimpleNamespace
-                layer = SimpleNamespace(value=layer)
+                # If no match found, use the string directly as key
+                # This allows for dynamic layer registration
+                self.cognitive_layers[layer] = instance
+                return
         
         self.cognitive_layers[layer] = instance
         
