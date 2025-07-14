@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-07-14T04:14:43.973987",
+  "fixes_applied": 0,
+  "unity_validation": {
+    "phase_coherence": 1.0,
+    "data_flow_continuity": 0.4,
+    "recursive_modularity": 0.7,
+    "cross_phase_integration": 0.6,
+    "emergent_synthesis": 0.7,
+    "overall_unity": 0.6799999999999999
+  },
+  "real_data_validation": {
+    "tensor_kernel": {
+      "is_real": false,
+      "score": 0.5,
+      "issues": [
+        "Validation error: `itemset` was removed from the ndarray class in NumPy 2.0. Use `arr[index] = value` instead."
+      ],
+      "evidence": {}
+    },
+    "cognitive_grammar": {
+      "is_real": true,
+      "score": 0.9,
+      "issues": [],
+      "evidence": {
+        "method_clear": "callable method",
+        "method_copy": "callable method",
+        "method_fromkeys": "callable method",
+        "method_get": "callable method",
+        "method_items": "callable method",
+        "method_keys": "callable method",
+        "method_pop": "callable method",
+        "method_popitem": "callable method",
+        "method_setdefault": "callable method",
+        "method_update": "callable method",
+        "method_values": "callable method"
+      },
+      "real_evidence_count": 11
+    },
+    "attention": {
+      "is_real": false,
+      "score": 0.5,
+      "issues": [
+        "Validation error: `itemset` was removed from the ndarray class in NumPy 2.0. Use `arr[index] = value` instead."
+      ],
+      "evidence": {}
+    },
+    "meta_cognitive": {
+      "is_real": true,
+      "score": 0.9,
+      "issues": [],
+      "evidence": {
+        "method_clear": "callable method",
+        "method_copy": "callable method",
+        "method_fromkeys": "callable method",
+        "method_get": "callable method",
+        "method_items": "callable method",
+        "method_keys": "callable method",
+        "method_pop": "callable method",
+        "method_popitem": "callable method",
+        "method_setdefault": "callable method",
+        "method_update": "callable method",
+        "method_values": "callable method"
+      },
+      "real_evidence_count": 11
+    },
+    "overall": {
+      "components_validated": 4,
+      "components_real": 2,
+      "overall_score": 0.7,
+      "passed": false
+    }
+  },
+  "overall_success": false
+}
