@@ -1,6 +1,6 @@
 {
   "phase6_comprehensive_test_report": {
-    "timestamp": "2025-07-14T04:38:45.033558",
+    "timestamp": "2025-07-14T04:46:47.367876",
     "summary": {
       "total_tests": 1,
       "passed_tests": 1,
@@ -29,10 +29,10 @@
         "unity_score": 1.0,
         "status": "PASSED",
         "performance": {
-          "tensor_ops_per_second": 201649.23076923078,
-          "knowledge_ops_per_second": 82209.01607212858,
-          "attention_ops_per_second": 738433.8028169014,
-          "meta_ops_per_second": 263.69817109589644
+          "tensor_ops_per_second": 199823.91615054788,
+          "knowledge_ops_per_second": 82809.55577492596,
+          "attention_ops_per_second": 803506.5134099617,
+          "meta_ops_per_second": 263.03997993164216
         }
       }
     ],

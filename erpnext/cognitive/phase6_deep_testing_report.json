@@ -1,6 +1,6 @@
 {
   "phase6_deep_testing_protocols_report": {
-    "timestamp": "2025-07-14T04:30:57.204408",
+    "timestamp": "2025-07-14T04:47:17.762283",
     "summary": {
       "total_boundary_tests": 4,
       "passed_boundary_tests": 0,
@@ -14,16 +14,16 @@
     },
     "boundary_test_results": {
       "knowledge_scale": {
-        "entity_creation_time": 0.16633129119873047,
+        "entity_creation_time": 0.16489863395690918,
         "entities_created": 10000,
-        "relationship_creation_time": 0.02657032012939453,
+        "relationship_creation_time": 0.026624441146850586,
         "relationships_created": 5000,
-        "query_time_at_scale": 0.03157305717468262,
+        "query_time_at_scale": 0.03158760070800781,
         "hypergraph_density": 10.439220201584966,
         "scale_boundary_status": "PASSED"
       },
       "attention_saturation": {
-        "rapid_switching_time": 0.0010006427764892578,
+        "rapid_switching_time": 0.0009906291961669922,
         "attention_saturation_status": "PASSED",
         "economic_stability": {
           "total_wages": 1100.0,
@@ -32,10 +32,10 @@
           "rent_fund": 50.0,
           "attention_summary": {
             "total_atoms": 200,
-            "total_attention": -2092.813148498535,
-            "mean_attention": -10.464065856933594,
-            "std_attention": 9499999989.535934,
-            "max_attention": 9500000396.19708,
+            "total_attention": 2847.1396980285645,
+            "mean_attention": 14.235698699951172,
+            "std_attention": 9500000014.2357,
+            "max_attention": 9500000424.271004,
             "min_attention": -9500000000.0,
             "history_length": 1
           }
@@ -43,8 +43,8 @@
         "extreme_values_handled": true
       },
       "tensor_computation": {
-        "large_scale_computation_time": 0.00394749641418457,
-        "memory_intensive_time": 0.0075244903564453125,
+        "large_scale_computation_time": 0.003941774368286133,
+        "memory_intensive_time": 0.007445812225341797,
         "numerical_stability_handled": true,
         "tensor_boundary_status": "PASSED"
       },
@@ -52,29 +52,29 @@
         "recursion_depth_analysis": [
           {
             "depth": 1,
-            "time": 0.09593558311462402,
+            "time": 0.09549808502197266,
             "successful": true
           },
           {
             "depth": 5,
-            "time": 0.47782015800476074,
+            "time": 0.47663450241088867,
             "successful": true
           },
           {
             "depth": 10,
-            "time": 0.9544582366943359,
+            "time": 0.952164888381958,
             "successful": true
           },
           {
             "depth": 20,
-            "time": 1.9101550579071045,
+            "time": 1.9079623222351074,
             "successful": true
           },
           {
             "depth": 50,
-            "time": 4.773826360702515,
+            "time": 4.8015296459198,
             "successful": true
           }
         ],
-        "meta_meta_cognition_time": 0.9568088054656982,
+        "meta_meta_cognition_time": 0.9524631500244141,
         "recursive_stability": 

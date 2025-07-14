@@ -1,11 +1,11 @@
 {
   "phase6_integration_test_report": {
-    "timestamp": "2025-07-14T04:30:57.730719",
+    "timestamp": "2025-07-14T04:47:18.287726",
     "summary": {
       "total_integration_tests": 4,
       "passed_integration_tests": 4,
       "integration_success_rate": 1.0,
-      "average_cognitive_coherence": 0.692270830878254,
+      "average_cognitive_coherence": 0.692270830880275,
       "real_data_implementation_confirmed": true,
       "phases_successfully_integrated": [
         1,
@@ -26,13 +26,13 @@
           4,
           5
         ],
-        "cognitive_coherence_score": 0.423869498279881,
+        "cognitive_coherence_score": 0.42386949827816206,
         "integration_status": "PASSED",
         "real_data_confirmed": true,
         "performance_metrics": {
           "emergence_score": 0.75,
           "network_density": 3.349135615962557,
-          "economic_balance": 1.9772700542988213,
+          "economic_balance": 1.9772700545763089,
           "cross_domain_connections": 20
         }
       },
@@ -45,11 +45,11 @@
           4,
           5
         ],
-        "cognitive_coherence_score": 0.34743604745535744,
+        "cognitive_coherence_score": 0.34743604746515994,
         "integration_status": "PASSED",
         "real_data_confirmed": true,
         "performance_metrics": {
-          "workflow_duration": 0.002214670181274414,
+          "workflow_duration": 0.0021567344665527344,
           "concepts_created": 3,
           "relationships_created": 2,
           "attention_allocations": 28
