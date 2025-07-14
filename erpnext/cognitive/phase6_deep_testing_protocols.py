@@ -805,12 +805,13 @@ class Phase6DeepTestingProtocols(unittest.TestCase):
         cls.attention = ECANAttention()
         cls.meta_cognitive = MetaCognitive()
         cls.evolutionary_optimizer = EvolutionaryOptimizer()
-        cls.feedback_analysis = FeedbackDrivenSelfAnalysis()
         
         # Register layers
         cls.meta_cognitive.register_layer(MetaLayer.TENSOR_KERNEL, cls.tensor_kernel)
         cls.meta_cognitive.register_layer(MetaLayer.COGNITIVE_GRAMMAR, cls.grammar)
         cls.meta_cognitive.register_layer(MetaLayer.ATTENTION_ALLOCATION, cls.attention)
+        
+        cls.feedback_analysis = FeedbackDrivenSelfAnalysis(cls.meta_cognitive)
         
         cls.components = {
             'tensor_kernel': cls.tensor_kernel,

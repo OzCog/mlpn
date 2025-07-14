@@ -357,15 +357,15 @@ class Phase6ComprehensiveTestSuite(unittest.TestCase):
         cls.grammar = CognitiveGrammar()
         cls.attention = ECANAttention()
         cls.meta_cognitive = MetaCognitive()
-        
-        # Phase 5 components
         cls.evolutionary_optimizer = EvolutionaryOptimizer()
-        cls.feedback_analysis = FeedbackDrivenSelfAnalysis()
         
         # Register all layers with meta-cognitive system
         cls.meta_cognitive.register_layer(MetaLayer.TENSOR_KERNEL, cls.tensor_kernel)
         cls.meta_cognitive.register_layer(MetaLayer.COGNITIVE_GRAMMAR, cls.grammar)
         cls.meta_cognitive.register_layer(MetaLayer.ATTENTION_ALLOCATION, cls.attention)
+        
+        # Phase 5 components - initialize feedback analysis with meta_cognitive
+        cls.feedback_analysis = FeedbackDrivenSelfAnalysis(cls.meta_cognitive)
         
         # Initialize validators
         cls.unity_validator = CognitiveUnificationValidator()
