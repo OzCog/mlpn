@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from datetime import datetime
 import sys
 import os
-from test_fixes import TestFixHelper
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -88,7 +87,7 @@ class CognitiveUnificationValidator:
         unity_scores['emergent_synthesis'] = self._validate_emergent_synthesis(components)
         
         # Overall unity score
-        unity_scores['overall_unity'] = TestFixHelper.safe_numpy_operation("mean", list(unity_scores.values()))
+        unity_scores['overall_unity'] = np.mean(list(unity_scores.values()))
         
         logger.info(f"✅ Cognitive unity validation complete. Overall score: {unity_scores['overall_unity']:.3f}")
         return unity_scores
@@ -117,7 +116,7 @@ class CognitiveUnificationValidator:
             stats = components['meta_cognitive'].get_system_stats()
             coherence_checks.append(1.0 if stats['registered_layers'] > 0 else 0.0)
             
-        return TestFixHelper.safe_numpy_operation("mean", coherence_checks) if coherence_checks else 0.0
+        return np.mean(coherence_checks) if coherence_checks else 0.0
         
     def _validate_data_flow(self, components: Dict[str, Any]) -> float:
         """Validate continuous data flow between phases"""
@@ -276,7 +275,7 @@ class CognitiveUnificationValidator:
             health = components['meta_cognitive'].diagnose_system_health()
             synthesis_indicators.append(health.get('coherence_score', 0))
             
-        return TestFixHelper.safe_numpy_operation("mean", synthesis_indicators) if synthesis_indicators else 0.0
+        return np.mean(synthesis_indicators) if synthesis_indicators else 0.0
 
 
 class RealDataValidator:
@@ -746,7 +745,7 @@ class Phase6ComprehensiveTestSuite(unittest.TestCase):
         # Calculate overall metrics
         total_tests = len(cls.test_results)
         passed_tests = sum(1 for r in cls.test_results if r.integration_status == "PASSED")
-        overall_unity_score = TestFixHelper.safe_numpy_operation("mean", [r.cognitive_unity_score for r in cls.test_results])
+        overall_unity_score = np.mean([r.cognitive_unity_score for r in cls.test_results])
         
         # Generate report
         report = {

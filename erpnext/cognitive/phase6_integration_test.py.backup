@@ -22,7 +22,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 import sys
 import os
-from test_fixes import TestFixHelper
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -105,7 +104,7 @@ class CognitiveUnificationEngine:
             validation_results['cognitive_coherence']['score']
         ]
         
-        validation_results['overall_unification_score'] = TestFixHelper.safe_numpy_operation("mean", unification_scores)
+        validation_results['overall_unification_score'] = np.mean(unification_scores)
         validation_results['unification_status'] = (
             'UNIFIED' if validation_results['overall_unification_score'] > 0.8 else 'PARTIAL'
         )
@@ -141,7 +140,7 @@ class CognitiveUnificationEngine:
         structural_checks['recursive_modularity_score'] = recursive_modularity
         
         # Overall structural score
-        structural_checks['score'] = TestFixHelper.safe_numpy_operation("mean", [
+        structural_checks['score'] = np.mean([
             registration_score,
             interface_consistency,
             recursive_modularity
@@ -168,7 +167,7 @@ class CognitiveUnificationEngine:
         functional_checks['error_handling_score'] = error_handling_score
         
         # Overall functional score
-        functional_checks['score'] = TestFixHelper.safe_numpy_operation("mean", [
+        functional_checks['score'] = np.mean([
             function_integration_score,
             state_sync_score,
             error_handling_score
@@ -204,7 +203,7 @@ class CognitiveUnificationEngine:
         
         # Calculate overall flow score
         flow_scores = [result['success_score'] for result in flow_results.values()]
-        flow_results['score'] = TestFixHelper.safe_numpy_operation("mean", flow_scores)
+        flow_results['score'] = np.mean(flow_scores)
         
         return flow_results
         
@@ -237,7 +236,7 @@ class CognitiveUnificationEngine:
             optimization_behaviors['emergence_score'],
             cognitive_insights['emergence_score']
         ]
-        emergent_results['score'] = TestFixHelper.safe_numpy_operation("mean", emergent_scores)
+        emergent_results['score'] = np.mean(emergent_scores)
         
         return emergent_results
         
@@ -270,7 +269,7 @@ class CognitiveUnificationEngine:
             logical_coherence['score'],
             causal_coherence['score']
         ]
-        coherence_results['score'] = TestFixHelper.safe_numpy_operation("mean", coherence_scores)
+        coherence_results['score'] = np.mean(coherence_scores)
         
         return coherence_results
         
@@ -1226,7 +1225,7 @@ class Phase6IntegrationTestSuite(unittest.TestCase):
         total_tests = len(cls.integration_results)
         passed_tests = sum(1 for r in cls.integration_results if r.integration_status == "PASSED")
         
-        avg_coherence = TestFixHelper.safe_numpy_operation("mean", [r.cognitive_coherence_score for r in cls.integration_results])
+        avg_coherence = np.mean([r.cognitive_coherence_score for r in cls.integration_results])
         all_real_data = all(r.real_data_confirmed for r in cls.integration_results)
         
         # Generate comprehensive report
